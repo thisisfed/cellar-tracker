@@ -6,9 +6,6 @@ admin side is a single PHP file behind password auth.
 
 **Live:** [cellar.thisisfed.xyz](https://cellar.thisisfed.xyz/)
 
-![Screenshot](docs/screenshot.png)
-<!-- Add a screenshot at docs/screenshot.png and the line above will render it -->
-
 ## What it does
 
 - Two lists: **Cellar** (bottles I haven't opened yet) and **Tasted** (bottles I've
