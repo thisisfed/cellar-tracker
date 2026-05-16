@@ -1,0 +1,15 @@
+# The bcrypt password hash, auto-generated on first admin visit.
+# NEVER commit this — anyone with it could attempt offline password attacks.
+cellar-config.php
+
+# Automatic admin backups
+*.bak.json
+
+# Editor / OS junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local PHP server logs if running locally
+php_errors.log
