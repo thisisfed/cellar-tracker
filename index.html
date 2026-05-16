@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
+<meta name="theme-color" content="#6633ff">
+
+<title>Schüller Ferrari · Corkers, Collectors, Connoisseurs · Wine Cellar</title>
+<meta name="description" content="The private wine cellar of Candice Schüller and Federico Ferrari. Natural and low-intervention wines, tasted, scored, catalogued.">
+<meta name="author" content="Candice Schüller, Federico Ferrari">
+<meta name="keywords" content="natural wine, low intervention wine, wine cellar, wine cellar tracker, Jean-Pierre Robinot, Anders Frederik Steen, Le Mazel, tasting notes, Schüller Ferrari">
+<link rel="canonical" href="https://cellar.thisisfed.xyz/">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cellar.thisisfed.xyz/">
+<meta property="og:title" content="Schüller Ferrari · Corkers, Collectors, Connoisseurs">
+<meta property="og:description" content="The private wine cellar of Candice Schüller and Federico Ferrari. Natural wines, tasted, scored, catalogued.">
+<meta property="og:site_name" content="Schüller Ferrari">
+<meta property="og:locale" content="en_GB">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Schüller Ferrari · Corkers, Collectors, Connoisseurs">
+<meta name="twitter:description" content="The private wine cellar of Candice Schüller and Federico Ferrari.">
+
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Schüller Ferrari",
+  "alternateName": "Corkers, Collectors, Connoisseurs",
+  "url": "https://cellar.thisisfed.xyz/",
+  "description": "The private wine cellar of Candice Schüller and Federico Ferrari. Natural and low-intervention wines, tasted, scored, and catalogued.",
+  "author": [
+    { "@type": "Person", "name": "Candice Schüller" },
+    { "@type": "Person", "name": "Federico Ferrari", "email": "office@thisisfed.com" }
+  ]
+}
+</script>
+
+<style>
+  html { -webkit-tap-highlight-color: rgba(0,0,0,0); -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+  body {
+    margin: 0; padding: 0;
+    font: clamp(15px, 1.5vw, 22px)/1em system-ui, sans-serif;
+    width: 100%; min-height: 100%;
+    background: #F5F5F5; color: #141415;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a, a:visited { color: #141415; text-decoration: underline; text-underline-offset: 0.15em; }
+  a:hover { color: #6633ff; }
+
+  .tc { box-sizing: border-box; padding: 0.5em 0.25em 2.5em 0.25em; }
+
+  .section-label {
+    color: #6633ff; padding: 0 0 0.5em 0;
+    font-size: 1em; letter-spacing: -0.02em;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1em;
+    text-transform: uppercase;
+    /* Sit above the fixed top header so CELLAR / 9 BOTTLES are visible
+       on the same line as SCHÜLLER FERRARI. Below the intro covers (z 103). */
+    position: relative; z-index: 102;
+  }
+  .section-label .count { font-variant-numeric: tabular-nums; }
+  .section-label + table { margin-bottom: 2.5em; }
+
+  table { table-layout: fixed; border-collapse: collapse; padding: 0; margin: 0 0 1em 0; width: 100%; }
+  tr { border-bottom: 1px solid rgba(20,20,21,0.25); }
+  td { padding: 0.25em; box-sizing: border-box; vertical-align: top; font-weight: normal; overflow-wrap: break-word; }
+  .col-year { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums; }
+  .col-size { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Identical column widths in Cellar and Tasted, at every viewport.
+     Size + Year take 10% each; the remaining 80% splits across the three text
+     columns. Using calc keeps the math visible and ensures exactly 100%. */
+  .c-name { width: calc((100% - 20%) / 3); }
+  .c-prod { width: calc((100% - 20%) / 3); }
+  .c-grap { width: calc((100% - 20%) / 3); }
+  .c-size { width: 10%; }
+  .c-year { width: 10%; }
+
+  /* Dot lives inside the wine-name cell. Negative text-indent pulls the dot
+     back to the cell edge so wrapped lines align with the wine name text. */
+  td.col-name { padding-left: 1.75em; text-indent: -1.5em; }
+  .dot {
+    display: inline-block; height: 1em; width: 1em; border-radius: 1em;
+    margin-right: 0.5em; vertical-align: top;
+  }
+  .dot.red    { background-color: #e30613; }
+  .dot.pink   { background-color: #f29fc5; }
+  .dot.orange { background-color: #f39200; }
+  .dot.white  { background-color: #ffed00; }
+
+  /* Tasted rows: identical look to cellar rows. Hover reveals tasting note. */
+  tr.tasted { position: relative; }
+  tr.tasted td { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
+  tr.tasted::after {
+    content: attr(data-note);
+    position: absolute; left: 0; right: 0;
+    /* Align with the first line of the row, matching td padding-top */
+    top: 0.25em;
+    padding-left: 1.75em;
+    color: #141415; opacity: 0; pointer-events: none;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  tr.tasted:hover td { opacity: 0; }
+  tr.tasted:hover::after { opacity: 1; }
+
+  #cover1, #cover2 {
+    position: fixed; left: 0; right: 0; height: 50vh;
+    background: #F5F5F5; z-index: 103; color: #6633ff;
+    letter-spacing: -0.02em; pointer-events: none; user-select: none;
+    text-align: center;
+  }
+  #cover1 { top: 0; }
+  #cover2 { top: 50vh; }
+  #cover1 span { position: absolute; left: 0; right: 0; bottom: 0; }
+  #cover2 span { position: absolute; left: 0; right: 0; top: 0; }
+  #wall {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #6633ff; z-index: 101; pointer-events: none; user-select: none;
+  }
+  #cover1, #cover2 { transition: transform 1600ms cubic-bezier(0.83, 0, 0.17, 1), opacity 400ms cubic-bezier(0.83, 0, 0.17, 1); }
+  #wall { transition: opacity 1600ms cubic-bezier(0.83, 0, 0.17, 1); }
+  #cover1.opacity { transform: translate(0, calc(-50vh + 1.5em)); }
+  #cover2.opacity { transform: translate(0, calc(50vh - 1.5em)); }
+  #wall.opacity { opacity: 0; }
+  #cover1.gone, #cover2.gone { opacity: 0; }
+
+  .top, .bottom {
+    position: fixed; left: 0; right: 0; z-index: 102;
+    color: #6633ff; pointer-events: none; user-select: none;
+    text-align: center; letter-spacing: -0.02em;
+    text-transform: uppercase;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .top { top: 0; padding: 0.5em 1em;
+    background: linear-gradient(0deg, rgba(245,245,245,0) 0%, rgba(245,245,245,0.85) 50%);
+  }
+  .bottom { bottom: 0; padding: 0.5em 1em;
+    background: linear-gradient(180deg, rgba(245,245,245,0) 0%, rgba(245,245,245,0.85) 50%);
+  }
+  .bottom .one   { transition: opacity 400ms cubic-bezier(0.83, 0, 0.17, 1); }
+  .bottom .two   { transition: opacity 1800ms cubic-bezier(0.83, 0, 0.17, 1); }
+  .bottom .three { transition: opacity 1000ms cubic-bezier(0.83, 0, 0.17, 1); }
+
+  .hide { opacity: 0 !important; }
+
+  .footer {
+    padding: 0 0.25em 0 0.25em;
+    line-height: 1em;
+    text-align: center;
+  }
+  .footer a, .footer a:visited { text-decoration: none; }
+
+  .empty { padding: 1em 0; opacity: 0.5; }
+
+  /* Visually-hidden but accessible to screen readers. Used on the table <thead>
+     so assistive tech can announce "Producer column" etc. without adding any
+     visible chrome. */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="cover1"><span>SCHÜLLER&nbsp;&nbsp;FERRARI</span></div>
+<div id="cover2"><span>CORKERS COLLECTORS CONNOISSEURS</span></div>
+<div id="wall"></div>
+
+<header class="top">SCHÜLLER&nbsp;&nbsp;FERRARI</header>
+
+<main class="tc">
+  <section>
+    <div class="section-label"><span>Cellar</span><span class="count" id="count-cellar"></span></div>
+    <table>
+      <colgroup>
+        <col class="c-name"><col class="c-prod"><col class="c-grap"><col class="c-size"><col class="c-year">
+      </colgroup>
+      <thead class="sr-only">
+        <tr><th>Name</th><th>Producer</th><th>Grapes</th><th>Size</th><th>Year</th></tr>
+      </thead>
+      <tbody id="tbody-cellar"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="section-label"><span>Tasted</span><span class="count" id="count-tasted"></span></div>
+    <table>
+      <colgroup>
+        <col class="c-name"><col class="c-prod"><col class="c-grap"><col class="c-size"><col class="c-year">
+      </colgroup>
+      <thead class="sr-only">
+        <tr><th>Name</th><th>Producer</th><th>Grapes</th><th>Size</th><th>Year</th></tr>
+      </thead>
+      <tbody id="tbody-tasted"></tbody>
+    </table>
+  </section>
+
+  <div class="footer">
+    Design, coding by <a href="https://thisisfed.xyz/" target="_blank" rel="noopener">Federico Ferrari</a>.<br>
+    Cellar last updated on <span id="last-updated">—</span>.
+  </div>
+</main>
+
+<footer class="bottom">
+  <span class="one">CORKERS</span> <span class="two">COLLECTORS</span> <span class="three">CONNOISSEURS</span>
+</footer>
+
+<script>
+const MONTHS = ["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
+
+function ordinal(n) {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return n + "th";
+  switch (n % 10) {
+    case 1: return n + "st";
+    case 2: return n + "nd";
+    case 3: return n + "rd";
+    default: return n + "th";
+  }
+}
+function shortYear(y) {
+  return `'${String(y % 100).padStart(2, "0")}`;
+}
+function formatDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${ordinal(d)} of ${MONTHS[m - 1]} ${shortYear(y)}`;
+}
+function formatDateObj(d) {
+  return `${ordinal(d.getDate())} of ${MONTHS[d.getMonth()]} ${shortYear(d.getFullYear())}`;
+}
+function formatScore(s) {
+  const whole = Math.floor(s);
+  const half = s - whole >= 0.5;
+  return half ? `${whole}½` : `${whole}`;
+}
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+const TYPE_LABELS = { red: "Red wine", pink: "Rosé wine", orange: "Orange wine", white: "White wine" };
+function rowHTML(w, tasted) {
+  const note = tasted
+    ? `data-note="Tasted on the ${formatDate(w.tasted)} ( Score: ${formatScore(w.score)} / 10 )"`
+    : "";
+  const typeLabel = TYPE_LABELS[w.type] || "Wine";
+  return `
+    <tr class="${tasted ? "tasted" : ""}" ${note}>
+      <td class="col-name"><span class="dot ${w.type}" role="img" aria-label="${typeLabel}"></span>${esc(w.name)}</td>
+      <td>${esc(w.producer)}</td>
+      <td>${esc(w.grapes)}</td>
+      <td class="col-size">${esc(w.size)}</td>
+      <td class="col-year">${esc(shortYear(w.year))}</td>
+    </tr>`;
+}
+
+function render(wines, lastModified) {
+  const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
+  const cellar = wines.filter(w => !w.tasted)
+    .sort((a, b) => (TYPE_ORDER[a.type] - TYPE_ORDER[b.type]) || (b.year - a.year) || a.name.localeCompare(b.name));
+  const tasted = wines.filter(w => w.tasted)
+    .sort((a, b) => b.tasted.localeCompare(a.tasted));
+
+  document.getElementById("tbody-cellar").innerHTML =
+    cellar.map(w => rowHTML(w, false)).join("")
+    || `<tr><td colspan="5" class="empty">Empty. Time to buy more wine.</td></tr>`;
+  document.getElementById("tbody-tasted").innerHTML =
+    tasted.map(w => rowHTML(w, true)).join("")
+    || `<tr><td colspan="5" class="empty">Nothing tasted yet.</td></tr>`;
+
+  document.getElementById("count-cellar").textContent =
+    `${cellar.length} ${cellar.length === 1 ? "bottle" : "bottles"}`;
+  document.getElementById("count-tasted").textContent =
+    `${tasted.length} ${tasted.length === 1 ? "bottle" : "bottles"}`;
+
+  // "Last updated" reflects when wines.json was last written (via admin.php)
+  const lastDate = lastModified ? new Date(lastModified) : null;
+  document.getElementById("last-updated").textContent =
+    (lastDate && !isNaN(lastDate)) ? `the ${formatDateObj(lastDate)}` : "—";
+}
+
+// Cache-bust so the public page always reflects the latest admin edits
+fetch("wines.json?v=" + Date.now())
+  .then(r => {
+    const lastModified = r.headers.get("Last-Modified");
+    return r.json().then(data => render(data, lastModified));
+  })
+  .catch(err => {
+    console.error("Couldn’t load wines.json:", err);
+    document.getElementById("tbody-cellar").innerHTML =
+      `<tr><td colspan="5" class="empty">Couldn’t load the cellar. Make sure wines.json is uploaded.</td></tr>`;
+  });
+
+/* Intro animation */
+setTimeout(() => {
+  document.getElementById("cover1").classList.add("opacity");
+  document.getElementById("cover2").classList.add("opacity");
+  document.getElementById("wall").classList.add("opacity");
+}, 1500);
+setTimeout(() => {
+  document.getElementById("cover1").classList.add("gone");
+  document.getElementById("cover2").classList.add("gone");
+}, 3000);
+
+/* Random quote — a new one each time the footer comes into view */
+const QUOTES = [
+  "I cook with wine, sometimes I even add it to the food",
+  "Wine is the most healthful and most hygienic of beverages",
+  "In wine, there’s truth",
+  "Wine makes all things possible",
+  "Wine is like the incarnation – it is both divine and human",
+  "All worries are less with wine",
+  "Wine is bottled poetry",
+  "One drop of wine is enough to redden a whole glass of water",
+  "I prefer my water in wine form",
+  "Always carry a corkscrew and the wine shall provide itself",
+  "Drink wine, drink poetry, drink virtue",
+  "Wine transforms moles into eagles",
+  "Wine is just a conversation waiting to happen",
+  "With wine ideas flow, without ideas wine flows",
+  "(Wine is) the nurse of old age",
+  "With bread and wine you can walk your road",
+  "It is better to die of drink than to die of thirst",
+  "The wine, the sadness and the night",
+  "To take wine into our mouths is to savor a droplet of the river of human history",
+  "Wine makes every meal an occasion, every table more elegant, every day more civilized",
+  "Where there is no wine, there is no love"
+];
+/* The bottom bar cycles forever: CORKERS COLLECTORS CONNOISSEURS at first,
+   then a random quote every 5 seconds. The 400ms fade matches the
+   tasted-row hover transition so the page has one consistent rhythm.
+   Top and bottom always stay visible. */
+const bottomEl = document.querySelector(".bottom");
+let lastQuoteIndex = -1;
+function nextQuote() {
+  let i;
+  do { i = Math.floor(Math.random() * QUOTES.length); } while (QUOTES.length > 1 && i === lastQuoteIndex);
+  lastQuoteIndex = i;
+  return QUOTES[i];
+}
+function cycleBottom() {
+  bottomEl.style.opacity = "0";
+  setTimeout(() => {
+    bottomEl.textContent = nextQuote();
+    bottomEl.style.opacity = "1";
+  }, 400);
+}
+setInterval(cycleBottom, 5000);
+</script>
+
+</body>
+</html>

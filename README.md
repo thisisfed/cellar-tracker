@@ -1,0 +1,126 @@
+# Schüller Ferrari Cellar
+
+A wine cellar tracker I built and use daily, in collaboration with my partner.
+The public side is a single static page that reads from a JSON file; the
+admin side is a single PHP file behind password auth.
+
+**Live:** [cellar.thisisfed.xyz](https://cellar.thisisfed.xyz/)
+
+![Screenshot](docs/screenshot.png)
+<!-- Add a screenshot at docs/screenshot.png and the line above will render it -->
+
+## What it does
+
+- Two lists: **Cellar** (bottles I haven't opened yet) and **Tasted** (bottles I've
+  drunk, each with a date and a 0–10 score in halves).
+- Hover a tasted row to reveal the tasting note.
+- A password-protected admin page to add, edit, "drink" (move from Cellar to Tasted),
+  or delete bottles. Bulk-add by setting Quantity > 1.
+- A persistent bottom bar that opens with the tagline "CORKERS COLLECTORS
+  CONNOISSEURS" and then cycles through wine quotes every five seconds. Top and
+  bottom always stay visible; the wine list scrolls between them.
+- A short intro animation on first load, with the wordmark sliding apart.
+
+## Stack
+
+- **Public page:** one `index.html` file. Vanilla JS, no framework, no build step.
+  Fetches `wines.json` on load and renders. ~16KB.
+- **Admin:** one `admin.php` file with session-based auth, CSRF protection, atomic
+  file writes. Bcrypt password storage in `cellar-config.php` (auto-generated on
+  first run; gitignored).
+- **Data:** a single `wines.json` file. The whole site rests on this; it's the only
+  source of truth.
+- **Hosting:** Spaceship shared hosting (Apache / LiteSpeed, PHP 8.x). No database.
+
+## Design decisions worth flagging
+
+**Why no framework.** The data model is one array of objects. Adding React, a
+build pipeline, or a templating engine would multiply the dependency surface
+without earning its keep. The whole public page is under 16KB and renders
+in two paint frames.
+
+**Why client-side fetch instead of server-render.** Spaceship's PHP can render
+the page server-side, but a client fetch means the public page can be cached
+hard, the admin can write the JSON without touching the HTML, and the same
+`index.html` works on any static host if I ever move.
+
+**The bottom bar is one element with one timing.** Earlier versions had two
+separate states — a `CORKERS COLLECTORS CONNOISSEURS` line visible only at the
+top of the page, and an in-flow random quote visible only when scrolled to the
+bottom. Both worked but split the concept across two elements and required
+scroll-position tracking, dynamic padding-bottom recalculation, and `prevAtBottom`
+state. Collapsing them into a single always-visible bottom bar that cycles on
+a timer removed all of that. Same idea, fewer moving parts.
+
+**Why a screen-reader-only `<thead>`.** The minimalist table layout doesn't have
+visible column headers — the content shape (colour dot, year, "75cl") is
+self-evident. But screen readers need column context, so the tables have a
+`<thead class="sr-only">` with proper `<th>` cells. Visually identical;
+assistive tech announces "Producer, Anders Frederik Steen…" instead of just
+the producer name in isolation.
+
+**The nested-form bug I hit and fixed.** An early version of the admin had the
+Delete `<form>` nested *inside* the wine-edit `<form>`. HTML5 parsers silently
+lift inner-form inputs into the outer form, which gave the edit form two
+`<input name="action">` fields with values `update` and `delete`. PHP's
+`$_POST` takes the last value for duplicate keys, so clicking "Save changes"
+silently fired the delete handler instead. Save secretly meant delete. Fixed
+by moving the delete form *outside* the wine form, with a negative margin to
+keep them visually adjacent.
+
+**Accessibility hooks beyond the thead.** Wine-type dots have
+`role="img" aria-label="Red wine"` (etc.) so the type isn't communicated by
+colour alone. The admin's flash messages auto-dismiss after 3 seconds and use
+a `.linkbutton` class for the Sign-out button so it matches the View-site
+link's font size.
+
+**One transition timing across the whole page.** The tasted-row hover, the
+top/bottom-bar fades, and the quote swap all use 400ms with
+`cubic-bezier(0.4, 0, 0.2, 1)`. Same rhythm everywhere — the page feels like
+one piece of software, not five components stitched together.
+
+## Run / deploy
+
+The site is four files plus the data:
+
+- `index.html` — public page
+- `admin.php` — admin interface
+- `wines.json` — the data
+- `.htaccess` — forces HTTPS, disables caching of `wines.json` and `admin.php`
+
+**Local preview:** open `index.html` in a browser. The admin needs PHP, so
+either run `php -S 127.0.0.1:8000` in the project folder or use any local
+PHP environment.
+
+**Deploy:** upload the four files to your web root via FTP / SFTP. Visit
+`/admin.php` once to set the admin password (it'll prompt you on first
+visit), then add bottles.
+
+## Project structure
+
+```
+.
+├── README.md
+├── .gitignore
+├── .htaccess           # HTTPS redirect + cache rules
+├── admin.php           # password-protected admin
+├── index.html          # public page
+└── wines.json          # the data
+```
+
+Not in the repo (gitignored):
+
+- `cellar-config.php` — generated by the admin on first visit, contains the
+  bcrypt password hash.
+- `*.bak.json` — automatic backups written by `admin.php` before each save.
+
+## A note on the data
+
+`wines.json` in this repo is my real cellar data, not a synthetic example.
+Scores and tasting dates are mine. If you fork this and run your own
+instance, drop in your own bottles via the admin and ignore mine.
+
+## Licence
+
+Personal project — no licence attached. Feel free to read, fork, and adapt
+for your own use; please don't ship it as a commercial product.
