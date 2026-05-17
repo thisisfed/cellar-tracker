@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
-<meta name="theme-color" content="#FF6029">
+<meta name="theme-color" content="#2D2FFF">
 
 <title>Schüller Ferrari · Corkers, Collectors, Connoisseurs · Wine Cellar</title>
 <meta name="description" content="The private wine cellar of Candice Schüller and Federico Ferrari. Natural and low-intervention wines, tasted, scored, catalogued.">
@@ -50,17 +50,17 @@
     margin: 0; padding: 0;
     font: clamp(15px, 2.5vw, 30px)/1em system-ui, sans-serif;
     width: 100%; min-height: 100%;
-    background: #F5F5F5; color: #595959;
+    background: #F5F5F5; color: #141415;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
-  a, a:visited { color: #595959; text-decoration: underline; text-underline-offset: 0.15em; }
-  a:hover { color: #FF6029; }
+  a, a:visited { color: #141415; text-decoration: underline; text-underline-offset: 0.15em; }
+  a:hover { color: #2D2FFF; }
 
-  .tc { box-sizing: border-box; padding: 0.5em 0.25em 1.75em 0.25em; }
+  .tc { box-sizing: border-box; padding: 0.5em 0.25em 1.5em 0.25em; }
 
   .section-label {
-    color: #FF6029; padding: 0 0 0.25em 0;
+    color: #2D2FFF; padding: 0 0 0.25em 0;
     font-size: 1em; letter-spacing: -0.02em;
     display: flex; justify-content: space-between; align-items: baseline; gap: 1em;
     text-transform: uppercase;
@@ -111,9 +111,9 @@
     margin-right: 0.5em; vertical-align: top;
   }
   .dot.red    { background-color: #E63946; }
-  .dot.pink   { background-color: #FF3D7F; }
+  .dot.pink   { background-color: #DB2777; }
   .dot.orange { background-color: #F5A623; }
-  .dot.white  { background-color: #FFD60A; }
+  .dot.white  { background-color: #FACC15; }
 
   /* Tasted rows: wine details visible by default; hover (desktop) or tap
      (mobile, via .is-revealed) replaces the row content with a centred
@@ -144,7 +144,7 @@
     transform: translateY(-50%);
     text-align: center;
     text-transform: uppercase;
-    color: #FF6029; opacity: 0; pointer-events: none;
+    color: #141415; opacity: 0; pointer-events: none;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   tr.tasted:hover td:not(.col-name),
@@ -156,7 +156,7 @@
 
   #cover1, #cover2 {
     position: fixed; left: 0; right: 0; height: 50vh;
-    background: #F5F5F5; z-index: 103; color: #FF6029;
+    background: #F5F5F5; z-index: 103; color: #2D2FFF;
     letter-spacing: -0.02em; pointer-events: none; user-select: none;
     text-align: center;
   }
@@ -166,7 +166,7 @@
   #cover2 span { position: absolute; left: 0; right: 0; top: 0; }
   #wall {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: #FF6029; z-index: 101; pointer-events: none; user-select: none;
+    background: #2D2FFF; z-index: 101; pointer-events: none; user-select: none;
   }
   #cover1, #cover2 { transition: transform 1600ms cubic-bezier(0.83, 0, 0.17, 1), opacity 400ms cubic-bezier(0.83, 0, 0.17, 1); }
   #wall { transition: opacity 1600ms cubic-bezier(0.83, 0, 0.17, 1); }
@@ -183,7 +183,7 @@
 
   .top, .bottom {
     position: fixed; left: 0; right: 0; z-index: 102;
-    color: #FF6029; pointer-events: none; user-select: none;
+    color: #2D2FFF; pointer-events: none; user-select: none;
     text-align: center; letter-spacing: -0.02em;
     text-transform: uppercase;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -209,8 +209,10 @@
     padding: 0 0.25em 0 0.25em;
     line-height: 1em;
     text-align: center;
+    text-transform: uppercase;
+    color: #2D2FFF;
   }
-  .footer a, .footer a:visited { text-decoration: none; }
+  .footer a, .footer a:visited { color: #2D2FFF; text-decoration: none; }
 
   .empty { padding: 1em 0; opacity: 0.5; }
 
@@ -272,8 +274,8 @@
   </section>
 
   <div class="footer">
-    Design, coding by <a href="https://thisisfed.xyz/" target="_blank" rel="noopener">Federico Ferrari</a>.<br>
-    Cellar last updated on <span id="last-updated">—</span>.
+    Design and coding: <a href="https://thisisfed.xyz/" target="_blank" rel="noopener">Federico Ferrari</a><br>
+    Last updated: <span id="last-updated">—</span>
   </div>
 </main>
 
@@ -467,7 +469,7 @@ function cycleBottom() {
     bottomEl.style.opacity = "1";
   }, 400);
 }
-setInterval(cycleBottom, 5000);
+setInterval(cycleBottom, 3500);
 </script>
 
 
