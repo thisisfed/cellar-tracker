@@ -211,6 +211,11 @@
     text-align: center;
     text-transform: uppercase;
     color: #2D2FFF;
+    /* Sit above the fixed quote bar (z-index 102) so its semi-opaque gradient
+       backdrop doesn't wash out the footer text when scrolled to the bottom.
+       z-index needs position to take effect, hence position: relative. */
+    position: relative;
+    z-index: 103;
   }
   .footer a, .footer a:visited { color: #2D2FFF; text-decoration: none; }
 
