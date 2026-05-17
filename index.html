@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
-<meta name="theme-color" content="#6633ff">
+<meta name="theme-color" content="#166534">
 
 <title>Schüller Ferrari · Corkers, Collectors, Connoisseurs · Wine Cellar</title>
 <meta name="description" content="The private wine cellar of Candice Schüller and Federico Ferrari. Natural and low-intervention wines, tasted, scored, catalogued.">
@@ -50,17 +50,17 @@
     margin: 0; padding: 0;
     font: clamp(15px, 1.5vw, 22px)/1em system-ui, sans-serif;
     width: 100%; min-height: 100%;
-    background: #F5F5F5; color: #141415;
+    background: #F5F5F5; color: #595959;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
-  a, a:visited { color: #141415; text-decoration: underline; text-underline-offset: 0.15em; }
-  a:hover { color: #6633ff; }
+  a, a:visited { color: #595959; text-decoration: underline; text-underline-offset: 0.15em; }
+  a:hover { color: #166534; }
 
-  .tc { box-sizing: border-box; padding: 0.5em 0.25em 2.5em 0.25em; }
+  .tc { box-sizing: border-box; padding: 0.5em 0.25em 1.75em 0.25em; }
 
   .section-label {
-    color: #6633ff; padding: 0 0 0.5em 0;
+    color: #166534; padding: 0 0 0.25em 0;
     font-size: 1em; letter-spacing: -0.02em;
     display: flex; justify-content: space-between; align-items: baseline; gap: 1em;
     text-transform: uppercase;
@@ -69,22 +69,20 @@
     position: relative; z-index: 102;
   }
   .section-label .count { font-variant-numeric: tabular-nums; }
-  .section-label + table { margin-bottom: 2.5em; }
+  .section-label + table { margin-bottom: 0.25em; }
 
   table { table-layout: fixed; border-collapse: collapse; padding: 0; margin: 0 0 1em 0; width: 100%; }
   tr { border-bottom: 1px solid rgba(20,20,21,0.25); }
   td { padding: 0.25em; box-sizing: border-box; vertical-align: top; font-weight: normal; overflow-wrap: break-word; }
-  .col-year { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums; }
-  .col-size { text-align: right; font-variant-numeric: tabular-nums; }
+  .col-year { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   /* Identical column widths in Cellar and Tasted, at every viewport.
-     Size + Year take 10% each; the remaining 80% splits across the three text
-     columns. Using calc keeps the math visible and ensures exactly 100%. */
-  .c-name { width: calc((100% - 20%) / 3); }
-  .c-prod { width: calc((100% - 20%) / 3); }
-  .c-grap { width: calc((100% - 20%) / 3); }
-  .c-size { width: 10%; }
-  .c-year { width: 10%; }
+     Year takes 13% (just enough for a 4-digit year on narrow mobile);
+     the remaining 87% splits across the three text columns. */
+  .c-name { width: calc((100% - 13%) / 3); }
+  .c-prod { width: calc((100% - 13%) / 3); }
+  .c-grap { width: calc((100% - 13%) / 3); }
+  .c-year { width: 13%; }
 
   /* Dot lives inside the wine-name cell. Negative text-indent pulls the dot
      back to the cell edge so wrapped lines align with the wine name text. */
@@ -98,8 +96,9 @@
   .dot.orange { background-color: #f39200; }
   .dot.white  { background-color: #ffed00; }
 
-  /* Tasted rows: identical look to cellar rows. Hover reveals tasting note. */
-  tr.tasted { position: relative; }
+  /* Tasted rows: identical look to cellar rows. Hover (desktop) or tap (mobile,
+     via .is-revealed class) swaps the row for a tasting note. */
+  tr.tasted { position: relative; cursor: pointer; }
   tr.tasted td { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
   tr.tasted::after {
     content: attr(data-note);
@@ -107,15 +106,15 @@
     /* Align with the first line of the row, matching td padding-top */
     top: 0.25em;
     padding-left: 1.75em;
-    color: #141415; opacity: 0; pointer-events: none;
+    color: #595959; opacity: 0; pointer-events: none;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  tr.tasted:hover td { opacity: 0; }
-  tr.tasted:hover::after { opacity: 1; }
+  tr.tasted:hover td, tr.tasted.is-revealed td { opacity: 0.1; }
+  tr.tasted:hover::after, tr.tasted.is-revealed::after { opacity: 1; }
 
   #cover1, #cover2 {
     position: fixed; left: 0; right: 0; height: 50vh;
-    background: #F5F5F5; z-index: 103; color: #6633ff;
+    background: #F5F5F5; z-index: 103; color: #166534;
     letter-spacing: -0.02em; pointer-events: none; user-select: none;
     text-align: center;
   }
@@ -125,10 +124,16 @@
   #cover2 span { position: absolute; left: 0; right: 0; top: 0; }
   #wall {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: #6633ff; z-index: 101; pointer-events: none; user-select: none;
+    background: #166534; z-index: 101; pointer-events: none; user-select: none;
   }
   #cover1, #cover2 { transition: transform 1600ms cubic-bezier(0.83, 0, 0.17, 1), opacity 400ms cubic-bezier(0.83, 0, 0.17, 1); }
   #wall { transition: opacity 1600ms cubic-bezier(0.83, 0, 0.17, 1); }
+  /* Compressed intro for return visits — ~1s total instead of ~3.4s.
+     Triggered by body.intro-fast which the JS adds when sessionStorage shows
+     the user has already seen the full splash this session. */
+  body.intro-fast #cover1,
+  body.intro-fast #cover2 { transition: transform 500ms cubic-bezier(0.83, 0, 0.17, 1), opacity 300ms cubic-bezier(0.83, 0, 0.17, 1); }
+  body.intro-fast #wall { transition: opacity 500ms cubic-bezier(0.83, 0, 0.17, 1); }
   #cover1.opacity { transform: translate(0, calc(-50vh + 1.5em)); }
   #cover2.opacity { transform: translate(0, calc(50vh - 1.5em)); }
   #wall.opacity { opacity: 0; }
@@ -136,17 +141,22 @@
 
   .top, .bottom {
     position: fixed; left: 0; right: 0; z-index: 102;
-    color: #6633ff; pointer-events: none; user-select: none;
+    color: #166534; pointer-events: none; user-select: none;
     text-align: center; letter-spacing: -0.02em;
     text-transform: uppercase;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+  /* The top "logo" needs to be selectable; covers above it (z 103) have
+     pointer-events: none so clicks pass through to the header underneath. */
+  .top { pointer-events: auto; user-select: text; -webkit-user-select: text; }
   .top { top: 0; padding: 0.5em 1em;
     background: linear-gradient(0deg, rgba(245,245,245,0) 0%, rgba(245,245,245,0.85) 50%);
   }
   .bottom { bottom: 0; padding: 0.5em 1em;
     background: linear-gradient(180deg, rgba(245,245,245,0) 0%, rgba(245,245,245,0.85) 50%);
   }
+  /* The text fades, the gradient does not. */
+  .bottom-text { display: inline-block; transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
   .bottom .one   { transition: opacity 400ms cubic-bezier(0.83, 0, 0.17, 1); }
   .bottom .two   { transition: opacity 1800ms cubic-bezier(0.83, 0, 0.17, 1); }
   .bottom .three { transition: opacity 1000ms cubic-bezier(0.83, 0, 0.17, 1); }
@@ -190,10 +200,10 @@
     <div class="section-label"><span>Cellar</span><span class="count" id="count-cellar"></span></div>
     <table>
       <colgroup>
-        <col class="c-name"><col class="c-prod"><col class="c-grap"><col class="c-size"><col class="c-year">
+        <col class="c-name"><col class="c-prod"><col class="c-grap"><col class="c-year">
       </colgroup>
       <thead class="sr-only">
-        <tr><th>Name</th><th>Producer</th><th>Grapes</th><th>Size</th><th>Year</th></tr>
+        <tr><th>Name</th><th>Producer</th><th>Grapes</th><th>Year</th></tr>
       </thead>
       <tbody id="tbody-cellar"></tbody>
     </table>
@@ -203,10 +213,10 @@
     <div class="section-label"><span>Tasted</span><span class="count" id="count-tasted"></span></div>
     <table>
       <colgroup>
-        <col class="c-name"><col class="c-prod"><col class="c-grap"><col class="c-size"><col class="c-year">
+        <col class="c-name"><col class="c-prod"><col class="c-grap"><col class="c-year">
       </colgroup>
       <thead class="sr-only">
-        <tr><th>Name</th><th>Producer</th><th>Grapes</th><th>Size</th><th>Year</th></tr>
+        <tr><th>Name</th><th>Producer</th><th>Grapes</th><th>Year</th></tr>
       </thead>
       <tbody id="tbody-tasted"></tbody>
     </table>
@@ -219,7 +229,9 @@
 </main>
 
 <footer class="bottom">
-  <span class="one">CORKERS</span> <span class="two">COLLECTORS</span> <span class="three">CONNOISSEURS</span>
+  <span class="bottom-text">
+    <span class="one">CORKERS</span> <span class="two">COLLECTORS</span> <span class="three">CONNOISSEURS</span>
+  </span>
 </footer>
 
 <script>
@@ -265,8 +277,7 @@ function rowHTML(w, tasted) {
       <td class="col-name"><span class="dot ${w.type}" role="img" aria-label="${typeLabel}"></span>${esc(w.name)}</td>
       <td>${esc(w.producer)}</td>
       <td>${esc(w.grapes)}</td>
-      <td class="col-size">${esc(w.size)}</td>
-      <td class="col-year">${esc(shortYear(w.year))}</td>
+      <td class="col-year">${esc(w.year)}</td>
     </tr>`;
 }
 
@@ -279,10 +290,10 @@ function render(wines, lastModified) {
 
   document.getElementById("tbody-cellar").innerHTML =
     cellar.map(w => rowHTML(w, false)).join("")
-    || `<tr><td colspan="5" class="empty">Empty. Time to buy more wine.</td></tr>`;
+    || `<tr><td colspan="4" class="empty">Empty. Time to buy more wine.</td></tr>`;
   document.getElementById("tbody-tasted").innerHTML =
     tasted.map(w => rowHTML(w, true)).join("")
-    || `<tr><td colspan="5" class="empty">Nothing tasted yet.</td></tr>`;
+    || `<tr><td colspan="4" class="empty">Nothing tasted yet.</td></tr>`;
 
   document.getElementById("count-cellar").textContent =
     `${cellar.length} ${cellar.length === 1 ? "bottle" : "bottles"}`;
@@ -304,49 +315,57 @@ fetch("wines.json?v=" + Date.now())
   .catch(err => {
     console.error("Couldn’t load wines.json:", err);
     document.getElementById("tbody-cellar").innerHTML =
-      `<tr><td colspan="5" class="empty">Couldn’t load the cellar. Make sure wines.json is uploaded.</td></tr>`;
+      `<tr><td colspan="4" class="empty">Couldn’t load the cellar. Make sure wines.json is uploaded.</td></tr>`;
   });
 
-/* Intro animation */
+// Tap a tasted row to reveal its note (mobile-friendly equivalent of hover).
+// Delegated on the tbody so it works for rows inserted after page load.
+// Tapping a second row closes the first, mirroring single-row hover on desktop.
+document.getElementById("tbody-tasted").addEventListener("click", (e) => {
+  const row = e.target.closest("tr.tasted");
+  if (!row) return;
+  const wasRevealed = row.classList.contains("is-revealed");
+  document.querySelectorAll("tr.tasted.is-revealed").forEach(r => r.classList.remove("is-revealed"));
+  if (!wasRevealed) row.classList.add("is-revealed");
+});
+
+/* Intro animation — always plays. ~3s on first visit, ~1s on return visits
+   (tracked via sessionStorage, so once-per-session). */
+const isRevisit = sessionStorage.getItem("introShown");
+sessionStorage.setItem("introShown", "1");
+if (isRevisit) document.body.classList.add("intro-fast");
+
+const introStart = isRevisit ? 100 : 1500;
+const introEnd   = isRevisit ? 600 : 3000;
+
 setTimeout(() => {
   document.getElementById("cover1").classList.add("opacity");
   document.getElementById("cover2").classList.add("opacity");
   document.getElementById("wall").classList.add("opacity");
-}, 1500);
+}, introStart);
 setTimeout(() => {
   document.getElementById("cover1").classList.add("gone");
   document.getElementById("cover2").classList.add("gone");
-}, 3000);
+}, introEnd);
 
 /* Random quote — a new one each time the footer comes into view */
 const QUOTES = [
-  "I cook with wine, sometimes I even add it to the food",
-  "Wine is the most healthful and most hygienic of beverages",
   "In wine, there’s truth",
   "Wine makes all things possible",
-  "Wine is like the incarnation – it is both divine and human",
   "All worries are less with wine",
   "Wine is bottled poetry",
-  "One drop of wine is enough to redden a whole glass of water",
   "I prefer my water in wine form",
-  "Always carry a corkscrew and the wine shall provide itself",
   "Drink wine, drink poetry, drink virtue",
   "Wine transforms moles into eagles",
-  "Wine is just a conversation waiting to happen",
-  "With wine ideas flow, without ideas wine flows",
   "(Wine is) the nurse of old age",
-  "With bread and wine you can walk your road",
-  "It is better to die of drink than to die of thirst",
   "The wine, the sadness and the night",
-  "To take wine into our mouths is to savor a droplet of the river of human history",
-  "Wine makes every meal an occasion, every table more elegant, every day more civilized",
   "Where there is no wine, there is no love"
 ];
 /* The bottom bar cycles forever: CORKERS COLLECTORS CONNOISSEURS at first,
    then a random quote every 5 seconds. The 400ms fade matches the
    tasted-row hover transition so the page has one consistent rhythm.
    Top and bottom always stay visible. */
-const bottomEl = document.querySelector(".bottom");
+const bottomEl = document.querySelector(".bottom-text");
 let lastQuoteIndex = -1;
 function nextQuote() {
   let i;
@@ -363,6 +382,9 @@ function cycleBottom() {
 }
 setInterval(cycleBottom, 5000);
 </script>
+
+
+<script type="text/javascript" src="/unprotected/back_to_spaceship.js?hash=4975d460e508829e8fb64d3962bc44ad35f3a95a"></script>
 
 </body>
 </html>
