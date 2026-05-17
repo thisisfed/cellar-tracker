@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
-<meta name="theme-color" content="#166534">
+<meta name="theme-color" content="#FF6029">
 
 <title>Schüller Ferrari · Corkers, Collectors, Connoisseurs · Wine Cellar</title>
 <meta name="description" content="The private wine cellar of Candice Schüller and Federico Ferrari. Natural and low-intervention wines, tasted, scored, catalogued.">
@@ -48,19 +48,19 @@
   html { -webkit-tap-highlight-color: rgba(0,0,0,0); -webkit-text-size-adjust: 100%; overflow-x: hidden; }
   body {
     margin: 0; padding: 0;
-    font: clamp(15px, 1.5vw, 22px)/1em system-ui, sans-serif;
+    font: clamp(15px, 2.5vw, 30px)/1em system-ui, sans-serif;
     width: 100%; min-height: 100%;
     background: #F5F5F5; color: #595959;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
   a, a:visited { color: #595959; text-decoration: underline; text-underline-offset: 0.15em; }
-  a:hover { color: #166534; }
+  a:hover { color: #FF6029; }
 
   .tc { box-sizing: border-box; padding: 0.5em 0.25em 1.75em 0.25em; }
 
   .section-label {
-    color: #166534; padding: 0 0 0.25em 0;
+    color: #FF6029; padding: 0 0 0.25em 0;
     font-size: 1em; letter-spacing: -0.02em;
     display: flex; justify-content: space-between; align-items: baseline; gap: 1em;
     text-transform: uppercase;
@@ -70,6 +70,25 @@
   }
   .section-label .count { font-variant-numeric: tabular-nums; }
   .section-label + table { margin-bottom: 0.25em; }
+
+  /* Sort controls sit next to "Tasted", inheriting the label's uppercase/orange
+     styling. Active sort is at full opacity; inactive options fade to 0.4 and
+     come back on hover. Plain buttons (no border/background) to read as text. */
+  .sort-controls {
+    display: inline-flex;
+    gap: 0.6em;
+    margin-left: 1em;
+  }
+  .sort-controls button {
+    background: none; border: none; padding: 0;
+    font: inherit; color: inherit;
+    text-transform: inherit; letter-spacing: inherit;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sort-controls button.active,
+  .sort-controls button:hover { opacity: 1; }
 
   table { table-layout: fixed; border-collapse: collapse; padding: 0; margin: 0 0 1em 0; width: 100%; }
   tr { border-bottom: 1px solid rgba(20,20,21,0.25); }
@@ -91,30 +110,53 @@
     display: inline-block; height: 1em; width: 1em; border-radius: 1em;
     margin-right: 0.5em; vertical-align: top;
   }
-  .dot.red    { background-color: #e30613; }
-  .dot.pink   { background-color: #f29fc5; }
-  .dot.orange { background-color: #f39200; }
-  .dot.white  { background-color: #ffed00; }
+  .dot.red    { background-color: #E63946; }
+  .dot.pink   { background-color: #FF3D7F; }
+  .dot.orange { background-color: #F5A623; }
+  .dot.white  { background-color: #FFD60A; }
 
-  /* Tasted rows: identical look to cellar rows. Hover (desktop) or tap (mobile,
-     via .is-revealed class) swaps the row for a tasting note. */
-  tr.tasted { position: relative; cursor: pointer; }
-  tr.tasted td { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
-  tr.tasted::after {
+  /* Tasted rows: wine details visible by default; hover (desktop) or tap
+     (mobile, via .is-revealed) replaces the row content with a centred
+     tasting note. The note is anchored on the first <td>, not the <tr>,
+     because some mobile browsers (notably some iOS Safari builds) don't
+     reliably establish a positioning context on <tr> when border-collapse
+     is in effect. <td> works everywhere. */
+  tr.tasted { cursor: pointer; }
+  tr.tasted td.col-name { position: relative; }
+  tr.tasted td:not(.col-name) { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
+  /* The col-name td contains a dot span and a wine-name span (added in
+     rowHTML). We fade those children on hover instead of fading the td
+     itself, so the ::after below stays at full opacity when revealed —
+     opacity on a parent multiplies onto pseudo-element children, which
+     would otherwise dim the note. */
+  tr.tasted td.col-name > * { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
+  tr.tasted td.col-name::after {
     content: attr(data-note);
-    position: absolute; left: 0; right: 0;
-    /* Align with the first line of the row, matching td padding-top */
-    top: 0.25em;
-    padding-left: 1.75em;
-    color: #595959; opacity: 0; pointer-events: none;
+    position: absolute;
+    top: 50%;
+    /* Span the full row even though the parent td is only ~29% wide.
+       left: 0 anchors at the td's left edge (= the table's left edge,
+       since col-name is the leftmost cell). width = viewport minus .tc's
+       0.25em of horizontal padding on each side (0.5em total). If .tc's
+       padding changes, update this calc. */
+    left: 0;
+    width: calc(100vw - 0.5em);
+    transform: translateY(-50%);
+    text-align: center;
+    text-transform: uppercase;
+    color: #FF6029; opacity: 0; pointer-events: none;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  tr.tasted:hover td, tr.tasted.is-revealed td { opacity: 0.1; }
-  tr.tasted:hover::after, tr.tasted.is-revealed::after { opacity: 1; }
+  tr.tasted:hover td:not(.col-name),
+  tr.tasted.is-revealed td:not(.col-name) { opacity: 0.1; }
+  tr.tasted:hover td.col-name > *,
+  tr.tasted.is-revealed td.col-name > * { opacity: 0.1; }
+  tr.tasted:hover td.col-name::after,
+  tr.tasted.is-revealed td.col-name::after { opacity: 1; }
 
   #cover1, #cover2 {
     position: fixed; left: 0; right: 0; height: 50vh;
-    background: #F5F5F5; z-index: 103; color: #166534;
+    background: #F5F5F5; z-index: 103; color: #FF6029;
     letter-spacing: -0.02em; pointer-events: none; user-select: none;
     text-align: center;
   }
@@ -124,7 +166,7 @@
   #cover2 span { position: absolute; left: 0; right: 0; top: 0; }
   #wall {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: #166534; z-index: 101; pointer-events: none; user-select: none;
+    background: #FF6029; z-index: 101; pointer-events: none; user-select: none;
   }
   #cover1, #cover2 { transition: transform 1600ms cubic-bezier(0.83, 0, 0.17, 1), opacity 400ms cubic-bezier(0.83, 0, 0.17, 1); }
   #wall { transition: opacity 1600ms cubic-bezier(0.83, 0, 0.17, 1); }
@@ -141,7 +183,7 @@
 
   .top, .bottom {
     position: fixed; left: 0; right: 0; z-index: 102;
-    color: #166534; pointer-events: none; user-select: none;
+    color: #FF6029; pointer-events: none; user-select: none;
     text-align: center; letter-spacing: -0.02em;
     text-transform: uppercase;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -210,7 +252,14 @@
   </section>
 
   <section>
-    <div class="section-label"><span>Tasted</span><span class="count" id="count-tasted"></span></div>
+    <div class="section-label">
+      <span>Tasted<span class="sort-controls">
+        <button type="button" data-sort="date" class="active">Date</button>
+        <button type="button" data-sort="score">Score</button>
+        <button type="button" data-sort="color">Color</button>
+      </span></span>
+      <span class="count" id="count-tasted"></span>
+    </div>
     <table>
       <colgroup>
         <col class="c-name"><col class="c-prod"><col class="c-grap"><col class="c-year">
@@ -249,7 +298,7 @@ function ordinal(n) {
 }
 function formatDate(iso) {
   const [y, m, d] = iso.split("-").map(Number);
-  return `${ordinal(d)} of ${MONTHS[m - 1]} ${y}`;
+  return `${String(d).padStart(2, "0")} / ${String(m).padStart(2, "0")} / ${y}`;
 }
 function formatDateObj(d) {
   return `${ordinal(d.getDate())} of ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
@@ -266,42 +315,81 @@ function esc(s) {
 const TYPE_LABELS = { red: "Red wine", pink: "Rosé wine", orange: "Orange wine", white: "White wine" };
 function rowHTML(w, tasted) {
   const note = tasted
-    ? `data-note="Tasted on the ${formatDate(w.tasted)} ( Score: ${formatScore(w.score)} / 10 )"`
+    ? `data-note="Tasted: ${formatDate(w.tasted)}, Score: ${formatScore(w.score)}"`
     : "";
   const typeLabel = TYPE_LABELS[w.type] || "Wine";
   return `
-    <tr class="${tasted ? "tasted" : ""}" ${note}>
-      <td class="col-name"><span class="dot ${w.type}" role="img" aria-label="${typeLabel}"></span>${esc(w.name)}</td>
+    <tr class="${tasted ? "tasted" : ""}">
+      <td class="col-name" ${note}><span class="dot ${w.type}" role="img" aria-label="${typeLabel}"></span><span>${esc(w.name)}</span></td>
       <td>${esc(w.producer)}</td>
       <td>${esc(w.grapes)}</td>
       <td class="col-year">${esc(w.year)}</td>
     </tr>`;
 }
 
+const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
+
+// State for the Tasted section's sort mode; mutated by the sort buttons.
+let allTasted = [];
+let currentSort = "date";
+
+function sortTasted(arr, mode) {
+  const copy = arr.slice();
+  switch (mode) {
+    case "score":
+      // Highest score first; tie-break on most-recent tasting.
+      return copy.sort((a, b) =>
+        ((b.score || 0) - (a.score || 0)) ||
+        (b.tasted || "").localeCompare(a.tasted || ""));
+    case "color":
+      // Same colour grouping as the cellar; within a colour, most recent first.
+      return copy.sort((a, b) =>
+        (TYPE_ORDER[a.type] - TYPE_ORDER[b.type]) ||
+        (b.tasted || "").localeCompare(a.tasted || ""));
+    case "date":
+    default:
+      return copy.sort((a, b) => (b.tasted || "").localeCompare(a.tasted || ""));
+  }
+}
+
+function renderTastedTable() {
+  const sorted = sortTasted(allTasted, currentSort);
+  document.getElementById("tbody-tasted").innerHTML =
+    sorted.map(w => rowHTML(w, true)).join("")
+    || `<tr><td colspan="4" class="empty">Nothing tasted yet.</td></tr>`;
+}
+
 function render(wines, lastModified) {
-  const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
   const cellar = wines.filter(w => !w.tasted)
     .sort((a, b) => (TYPE_ORDER[a.type] - TYPE_ORDER[b.type]) || (b.year - a.year) || a.name.localeCompare(b.name));
-  const tasted = wines.filter(w => w.tasted)
-    .sort((a, b) => b.tasted.localeCompare(a.tasted));
+  allTasted = wines.filter(w => w.tasted);
 
   document.getElementById("tbody-cellar").innerHTML =
     cellar.map(w => rowHTML(w, false)).join("")
     || `<tr><td colspan="4" class="empty">Empty. Time to buy more wine.</td></tr>`;
-  document.getElementById("tbody-tasted").innerHTML =
-    tasted.map(w => rowHTML(w, true)).join("")
-    || `<tr><td colspan="4" class="empty">Nothing tasted yet.</td></tr>`;
+  renderTastedTable();
 
   document.getElementById("count-cellar").textContent =
     `${cellar.length} ${cellar.length === 1 ? "bottle" : "bottles"}`;
   document.getElementById("count-tasted").textContent =
-    `${tasted.length} ${tasted.length === 1 ? "bottle" : "bottles"}`;
+    `${allTasted.length} ${allTasted.length === 1 ? "bottle" : "bottles"}`;
 
   // "Last updated" reflects when wines.json was last written (via admin.php)
   const lastDate = lastModified ? new Date(lastModified) : null;
   document.getElementById("last-updated").textContent =
     (lastDate && !isNaN(lastDate)) ? `the ${formatDateObj(lastDate)}` : "—";
 }
+
+// Wire up the sort controls. Buttons exist in the DOM by the time this runs
+// (script is at end of body), so no need to wait for DOMContentLoaded.
+document.querySelectorAll(".sort-controls button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    currentSort = btn.dataset.sort;
+    document.querySelectorAll(".sort-controls button").forEach(b =>
+      b.classList.toggle("active", b === btn));
+    renderTastedTable();
+  });
+});
 
 // Cache-bust so the public page always reflects the latest admin edits
 fetch("wines.json?v=" + Date.now())
