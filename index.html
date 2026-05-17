@@ -247,15 +247,12 @@ function ordinal(n) {
     default: return n + "th";
   }
 }
-function shortYear(y) {
-  return `'${String(y % 100).padStart(2, "0")}`;
-}
 function formatDate(iso) {
   const [y, m, d] = iso.split("-").map(Number);
-  return `${ordinal(d)} of ${MONTHS[m - 1]} ${shortYear(y)}`;
+  return `${ordinal(d)} of ${MONTHS[m - 1]} ${y}`;
 }
 function formatDateObj(d) {
-  return `${ordinal(d.getDate())} of ${MONTHS[d.getMonth()]} ${shortYear(d.getFullYear())}`;
+  return `${ordinal(d.getDate())} of ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 function formatScore(s) {
   const whole = Math.floor(s);
