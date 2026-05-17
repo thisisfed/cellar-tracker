@@ -37,21 +37,53 @@ function save_password_hash(string $hash): void {
 }
 
 function load_wines(): array {
+  // CRITICAL: this function must never silently return [] when the file
+  // actually exists but can't be parsed. If it did, the next save_wines()
+  // would overwrite the corrupt file with an empty array — total data loss.
   if (!file_exists(DATA_FILE)) return [];
   $json = file_get_contents(DATA_FILE);
+  if ($json === false) {
+    throw new RuntimeException('Could not read wines.json — check file permissions.');
+  }
+  if (trim($json) === '') return [];
   $data = json_decode($json, true);
+  if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
+    throw new RuntimeException(
+      'wines.json is corrupted (' . json_last_error_msg() . '). '
+      . 'Refusing to load so the next save does not overwrite your data. '
+      . 'Restore from wines.json.bak in this folder, then refresh.'
+    );
+  }
   return is_array($data) ? $data : [];
 }
 
 function save_wines(array $wines): void {
-  // Atomic write: write to temp, then rename.
-  $tmp = DATA_FILE . '.tmp';
+  // Encode first, fail loudly if it can't be encoded (e.g. invalid UTF-8).
   $payload = json_encode(
     array_values($wines),
     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
   );
-  file_put_contents($tmp, $payload, LOCK_EX);
-  rename($tmp, DATA_FILE);
+  if ($payload === false) {
+    throw new RuntimeException('Could not encode wines as JSON: ' . json_last_error_msg());
+  }
+
+  // Atomic write: write to temp, back up the current file, then rename.
+  $tmp = DATA_FILE . '.tmp';
+  $bak = DATA_FILE . '.bak';
+  if (file_put_contents($tmp, $payload, LOCK_EX) === false) {
+    throw new RuntimeException('Could not write temp file ' . $tmp);
+  }
+  // Keep a single rolling backup of the previous good state.
+  if (file_exists(DATA_FILE)) {
+    @copy(DATA_FILE, $bak);
+  }
+  if (!rename($tmp, DATA_FILE)) {
+    // Some filesystems disallow rename across mount points — fall back to copy.
+    if (!copy($tmp, DATA_FILE)) {
+      throw new RuntimeException('Could not save wines.json — check folder permissions.');
+    }
+    @unlink($tmp);
+  }
 }
 
 function new_id(): string { return 'w' . bin2hex(random_bytes(5)); }
@@ -81,8 +113,16 @@ function wine_from_form(array $existing = []): array {
   $w['year']     = (int)($_POST['year'] ?? date('Y'));
 
   if (!empty($_POST['tasted_date'])) {
-    $w['tasted'] = $_POST['tasted_date'];
-    $w['score']  = (float)($_POST['score'] ?? 7);
+    // Validate the date is real (YYYY-MM-DD and parseable) before storing.
+    // Without this, a typo like "2023-13-45" or "abc" would silently move
+    // the wine to the Tasted section with garbage data.
+    $d = $_POST['tasted_date'];
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d) !== false) {
+      $w['tasted'] = $d;
+      $w['score']  = (float)($_POST['score'] ?? 7);
+    } else {
+      unset($w['tasted'], $w['score']);
+    }
   } else {
     unset($w['tasted'], $w['score']);
   }
@@ -180,11 +220,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     case 'update':
       $id = $_POST['id'] ?? '';
+      $found = false;
       foreach ($wines as $i => $w) {
         if (($w['id'] ?? '') === $id) {
-          $wines[$i] = wine_from_form($w);
+          $updated = wine_from_form($w);
+          if ($updated['name'] === '') {
+            flash_set('Wine name can’t be empty — no changes saved.');
+            redirect();
+          }
+          $wines[$i] = $updated;
+          $found = true;
           break;
         }
+      }
+      if (!$found) {
+        // ID didn't match any row — don't write a no-op save that could
+        // clobber a concurrent edit. Just bail with a clear message.
+        flash_set('That bottle wasn’t found — nothing was changed.');
+        redirect();
       }
       save_wines($wines);
       flash_set('Updated.');
@@ -192,7 +245,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     case 'delete':
       $id = $_POST['id'] ?? '';
+      $before = count($wines);
       $wines = array_values(array_filter($wines, fn($w) => ($w['id'] ?? '') !== $id));
+      if (count($wines) === $before) {
+        // Nothing matched — don't write a no-op save.
+        flash_set('That bottle wasn’t found — nothing was deleted.');
+        redirect();
+      }
       save_wines($wines);
       flash_set('Bottle deleted.');
       redirect();
@@ -343,10 +402,10 @@ function head_html(string $title): string {
     padding: 0.35rem 0.7rem; font-size: 0.8rem;
   }
   .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 50%; margin-right: 0.4em; vertical-align: middle; }
-  .dot.red    { background: #e30613; }
-  .dot.pink   { background: #f29fc5; }
-  .dot.orange { background: #f39200; }
-  .dot.white  { background: #ffed00; border: 1px solid var(--border); }
+  .dot.red    { background: #722F37; }
+  .dot.pink   { background: #E8A99B; }
+  .dot.orange { background: #B07333; }
+  .dot.white  { background: #DCC359; border: 1px solid var(--border); }
 
   /* Login + setup pages */
   .auth-wrap { max-width: 380px; margin: 4rem auto; }
@@ -485,13 +544,18 @@ function render_form_card(?array $editing, bool $isDrink): string {
   $cancel = $isEdit ? '<a class="btn" href="admin.php">Cancel</a>' : '';
   $delete = '';
   if ($isEdit) {
+    // No nested <form> here — that caused duplicate name="action" inputs in
+    // the parsed DOM (HTML doesn't allow nested forms; browsers flatten them)
+    // and every submission silently became action=delete. Now it's a plain
+    // submit button inside the same form, with its own name=action value=delete
+    // that only takes effect when this specific button is clicked.
+    // formnovalidate skips required-field checks (we don't need a valid name
+    // to delete). The first submit button — the primary one above — is what
+    // Enter implicitly triggers, so Enter is always Save, never Delete.
     $delete = <<<HTML
-      <form class="inline" method="post" onsubmit="return confirm('Delete this bottle for good?');">
-        <input type="hidden" name="action" value="delete">
-        <input type="hidden" name="csrf" value="{$csrf}">
-        <input type="hidden" name="id" value="{$w['id']}">
-        <button class="danger" type="submit">Delete</button>
-      </form>
+      <button class="danger" type="submit" name="action" value="delete"
+              formnovalidate
+              onclick="return confirm('Delete this bottle for good?');">Delete</button>
 HTML;
   }
 
@@ -509,7 +573,6 @@ HTML;
   return <<<HTML
 <form class="card" method="post" id="wineForm">
   <h3>{$heading}</h3>
-  <input type="hidden" name="action" value="{$action}">
   <input type="hidden" name="csrf" value="{$csrf}">
   {$idField}
 
@@ -567,7 +630,7 @@ HTML;
   </div>
 
   <div class="actions">
-    <button class="primary" type="submit">{$submitLabel}</button>
+    <button class="primary" type="submit" name="action" value="{$action}">{$submitLabel}</button>
     {$cancel}
     {$delete}
   </div>

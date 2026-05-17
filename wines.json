@@ -269,7 +269,9 @@
         "producer": "Jean–Pierre Robinot",
         "grapes": "Carignan, Grenache, Syrah",
         "size": "75cl",
-        "year": 2020
+        "year": 2020,
+        "tasted": "2024-04-17",
+        "score": 9.5
     },
     {
         "id": "wb77f768131",
@@ -278,7 +280,9 @@
         "producer": "Jean–Pierre Robinot",
         "grapes": "Carignan, Grenache, Syrah",
         "size": "150cl",
-        "year": 2020
+        "year": 2020,
+        "tasted": "2024-01-20",
+        "score": 9
     },
     {
         "id": "w09fc158532",
@@ -287,7 +291,9 @@
         "producer": "Jean–Pierre Robinot",
         "grapes": "Pineau d’Aunis",
         "size": "75cl",
-        "year": 2018
+        "year": 2018,
+        "tasted": "2023-05-17",
+        "score": 8
     },
     {
         "id": "w78aa6c38cb",
@@ -296,7 +302,9 @@
         "producer": "Anders Frederik Steen & Anne Bruun Blauert",
         "grapes": "Petite Sirah",
         "size": "75cl",
-        "year": 2018
+        "year": 2018,
+        "tasted": "2025-04-23",
+        "score": 8.5
     },
     {
         "id": "wc5f7882d94",
@@ -305,7 +313,9 @@
         "producer": "Jean–Pierre Robinot",
         "grapes": "Pineau d’Aunis",
         "size": "75cl",
-        "year": 2021
+        "year": 2021,
+        "tasted": "2024-08-17",
+        "score": 7
     },
     {
         "id": "w72f5fd1c4f",
@@ -314,7 +324,9 @@
         "producer": "Anders Frederik Steen & Anne Bruun Blauert",
         "grapes": "Viognier",
         "size": "75cl",
-        "year": 2020
+        "year": 2020,
+        "tasted": "2026-01-17",
+        "score": 6.5
     },
     {
         "id": "wa5b70b9ed7",
@@ -323,7 +335,9 @@
         "producer": "Anders Frederik Steen & Anne Bruun Blauert",
         "grapes": "Chardonnay",
         "size": "75cl",
-        "year": 2016
+        "year": 2016,
+        "tasted": "2026-04-23",
+        "score": 9
     },
     {
         "id": "w8de0bb6fc2",
@@ -332,7 +346,9 @@
         "producer": "Anders Frederik Steen & Anne Bruun Blauert",
         "grapes": "Chardonnay",
         "size": "75cl",
-        "year": 2016
+        "year": 2016,
+        "tasted": "2025-02-17",
+        "score": 9.5
     },
     {
         "id": "w7b958af62d",
@@ -341,6 +357,8 @@
         "producer": "Anders Frederik Steen & Anne Bruun Blauert",
         "grapes": "Pinot Gris",
         "size": "75cl",
-        "year": 2013
+        "year": 2013,
+        "tasted": "2025-05-17",
+        "score": 7.5
     }
 ]
