@@ -73,17 +73,28 @@
     position: relative; z-index: 102;
   }
   /* The section label that contains sort controls (i.e. Tasted) has three
-     children: label / sort buttons / count. A 3-column grid with mirrored
-     1fr columns either side of the auto-sized middle column puts the sort
-     buttons at the visual middle of the row, regardless of how wide the
-     label and count are. The 1fr columns themselves hold label and count;
-     text-align places them at the row edges. */
+     children: label / sort buttons / count. Grid 1fr-auto-1fr should
+     symmetrically centre the middle column — but in practice intrinsic
+     content sizing on `1fr` columns plus the row's own `gap` can pull
+     things subtly off-centre. Solution: flex layout for the side labels,
+     absolute-positioned sort buttons pinned to viewport centre via
+     left:50% + translateX(-50%). The buttons are guaranteed to sit on
+     the screen's horizontal midline regardless of how much text is on
+     either side. */
   .section-label:has(.sort-controls) {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
+    position: relative;
+    align-items: baseline;
+    gap: 0;
   }
-  .section-label:has(.sort-controls) > :nth-child(1) { text-align: left; }
-  .section-label:has(.sort-controls) > :nth-child(3) { text-align: right; }
+  .section-label:has(.sort-controls) > :nth-child(1) { flex: 1; text-align: left; }
+  .section-label:has(.sort-controls) > :nth-child(3) { flex: 1; text-align: right; }
+  .section-label:has(.sort-controls) .sort-controls {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+  }
   .section-label + table { margin-bottom: 0.25em; }
 
   /* Sort controls sit next to "Tasted", inheriting the label's uppercase/orange
@@ -150,13 +161,22 @@
     top: 50%;
     /* Span the full row even though the parent td is only ~29% wide.
        left: 0 anchors at the td's left edge (= the table's left edge,
-       since col-name is the leftmost cell). width = viewport minus .tc's
-       0.25em of horizontal padding on each side (0.5em total). If .tc's
-       padding changes, update this calc. */
+       since col-name is the leftmost cell). Width is viewport minus .tc's
+       0.25em horizontal padding on each side (0.5em total) minus the
+       scrollbar gutter (--sb, set from JS) — without subtracting the
+       scrollbar, 100vw includes gutter space but the content area
+       doesn't, so the overlay's centre drifts right of the visible
+       content centre. --sb defaults to 0 when JS hasn't set it (e.g. on
+       Mac with overlay scrollbars). */
     left: 0;
-    width: calc(100vw - 0.5em);
+    width: calc(100vw - 0.5em - var(--sb, 0px));
     transform: translateY(-50%);
     text-align: center;
+    /* Reset the -1.5em text-indent inherited from td.col-name (which uses
+       it for the dot+wine-name layout). Without this reset the centered
+       text gets pushed 1.5em to the left of the overlay's geometric
+       centre. */
+    text-indent: 0;
     text-transform: uppercase;
     color: #141415; opacity: 0; pointer-events: none;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -178,51 +198,103 @@
     tr.tasted.is-revealed td.col-name::after { opacity: 1; }
   }
 
+  /* Federico's idea: cover starts as a white→white 100% mask (visually
+     identical to a solid fill). At the end of the slide, one stop of the
+     mask transitions to alpha 0 — the inner edge of the cover (bottom of
+     cover1, top of cover2) dissolves to transparent. Because it's a mask
+     rather than a background gradient, the dissolution fades the cover
+     entirely — background AND text together — so the cover doesn't leave
+     a floating text behind. @property registers --cover-alpha as a typed
+     number so the mask gradient interpolates frame-by-frame. */
+  @property --cover-alpha {
+    syntax: '<number>';
+    initial-value: 1;
+    inherits: false;
+  }
   #cover1, #cover2 {
     position: fixed; left: 0; right: 0; height: 50vh;
     background: #F5F5F5; z-index: 105; color: #2D2FFF;
     letter-spacing: -0.005em; pointer-events: none; user-select: none;
     text-align: center;
+    --cover-alpha: 1;
+    -webkit-mask-mode: alpha;
+    mask-mode: alpha;
   }
-  #cover1 { top: 0; }
-  #cover2 { top: 50vh; }
+  #cover1 {
+    top: 0;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0, var(--cover-alpha)) 100%);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0, var(--cover-alpha)) 100%);
+  }
+  #cover2 {
+    top: 50vh;
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0, var(--cover-alpha)) 100%);
+    mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0, var(--cover-alpha)) 100%);
+  }
   #cover1 span { position: absolute; left: 0; right: 0; bottom: 0; }
   #cover2 span { position: absolute; left: 0; right: 0; top: 0; }
   #wall {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: #2D2FFF; z-index: 104; pointer-events: none; user-select: none;
   }
-  #cover1, #cover2 { transition: transform 1600ms cubic-bezier(0.83, 0, 0.17, 1), opacity 400ms cubic-bezier(0.83, 0, 0.17, 1); }
-  #wall { transition: opacity 1600ms cubic-bezier(0.83, 0, 0.17, 1); }
-  /* Compressed intro for return visits — ~1s total instead of ~3.4s.
+  /* Two separate triggers: .opacity starts the slide (transform only);
+     .gone starts the dissolution (--cover-alpha only). The dissolution
+     therefore happens AFTER the slide, when the cover has reached its
+     final resting position. */
+  #cover1, #cover2 {
+    transition:
+      transform 2000ms cubic-bezier(0.83, 0, 0.17, 1),
+      --cover-alpha 800ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #wall { transition: opacity 2000ms cubic-bezier(0.83, 0, 0.17, 1); }
+  /* Compressed intro for return visits — ~1s total instead of ~3s.
      Triggered by body.intro-fast which the JS adds when sessionStorage shows
      the user has already seen the full splash this session. */
   body.intro-fast #cover1,
-  body.intro-fast #cover2 { transition: transform 500ms cubic-bezier(0.83, 0, 0.17, 1), opacity 300ms cubic-bezier(0.83, 0, 0.17, 1); }
-  body.intro-fast #wall { transition: opacity 500ms cubic-bezier(0.83, 0, 0.17, 1); }
+  body.intro-fast #cover2 {
+    transition:
+      transform 700ms cubic-bezier(0.83, 0, 0.17, 1),
+      --cover-alpha 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  body.intro-fast #wall { transition: opacity 700ms cubic-bezier(0.83, 0, 0.17, 1); }
   #cover1.opacity { transform: translate(0, calc(-50vh + 1.5em)); }
   #cover2.opacity { transform: translate(0, calc(50vh - 1.5em)); }
+  #cover1.gone, #cover2.gone { --cover-alpha: 0; }
   #wall.opacity { opacity: 0; }
-  #cover1.gone, #cover2.gone { opacity: 0; }
 
   .top, .bottom {
     position: fixed; left: 0; right: 0; z-index: 102;
     color: #2D2FFF; pointer-events: none; user-select: none;
     text-align: center; letter-spacing: -0.005em;
     text-transform: uppercase;
-    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* The top "logo" needs to be selectable; covers above it (z 103) have
+  /* Gradient backdrop sits on a ::before pseudo so it can be visible from
+     page load — the covers above (z 105) mask it initially, then naturally
+     reveal it as they slide apart. No separate fade-in needed; the gradient
+     "appears" as a function of cover position. */
+  .top::before, .bottom::before {
+    content: ""; position: absolute; inset: 0;
+    z-index: -1; pointer-events: none;
+  }
+
+  /* The top "logo" needs to be selectable; covers above it have
      pointer-events: none so clicks pass through to the header underneath. */
   .top { pointer-events: auto; user-select: text; -webkit-user-select: text; }
-  .top { top: 0; padding: 0.5em 1em;
+  .top { top: 0; padding: 0.5em 1em; }
+  .bottom { bottom: 0; padding: 0.5em 1em; }
+  .top::before {
     background: linear-gradient(0deg, rgba(245,245,245,0) 0%, rgba(245,245,245,0.85) 50%);
   }
-  .bottom { bottom: 0; padding: 0.5em 1em;
+  .bottom::before {
     background: linear-gradient(180deg, rgba(245,245,245,0) 0%, rgba(245,245,245,0.85) 50%);
   }
-  /* The text fades, the gradient does not. */
-  .bottom-text { display: inline-block; transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
+  /* Text inside the bars sits at opacity 1 from page load — the covers
+     above feather their inner edge to transparent during the slide, so
+     the logo and quote are revealed naturally through that gradient.
+     The transition on .bottom-text is for the quote rotation only —
+     short duration (200ms) so the invisible moment at the swap boundary
+     is imperceptible. */
+  .top-text, .bottom-text { display: inline-block; }
+  .bottom-text { transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1); }
   .bottom .one   { transition: opacity 400ms cubic-bezier(0.83, 0, 0.17, 1); }
   .bottom .two   { transition: opacity 1800ms cubic-bezier(0.83, 0, 0.17, 1); }
   .bottom .three { transition: opacity 1000ms cubic-bezier(0.83, 0, 0.17, 1); }
@@ -266,7 +338,7 @@
 <div id="cover2"><span>CORKERS COLLECTORS CONNOISSEURS</span></div>
 <div id="wall"></div>
 
-<header class="top">SCHÜLLER&nbsp;&nbsp;FERRARI</header>
+<header class="top"><span class="top-text">SCHÜLLER&nbsp;&nbsp;FERRARI</span></header>
 
 <main class="tc">
   <section>
@@ -286,8 +358,8 @@
     <div class="section-label">
       <span>Tasted</span>
       <span class="sort-controls">
-        <button type="button" data-sort="alpha">AZ</button>
-        <button type="button" data-sort="date" class="active">Date</button>
+        <button type="button" data-sort="alpha" class="active">AZ</button>
+        <button type="button" data-sort="date">Date</button>
         <button type="button" data-sort="score">Score</button>
         <button type="button" data-sort="colour">Colour</button>
       </span>
@@ -306,7 +378,7 @@
 
   <div class="footer">
     Design and coding: <a href="https://thisisfed.xyz/" target="_blank" rel="noopener">Federico Ferrari</a><br>
-    Last updated: <span id="last-updated">—</span>
+    Last update: <span id="last-updated">—</span>
   </div>
 </main>
 
@@ -357,8 +429,8 @@ const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
 // default direction.
 const SORT_DEFAULTS = { date: -1, score: -1, colour: 1, alpha: 1 };
 let allTasted = [];
-let currentSort = "date";
-let currentDir = SORT_DEFAULTS.date;
+let currentSort = "alpha";
+let currentDir = SORT_DEFAULTS.alpha;
 
 function sortTasted(arr, mode, dir) {
   const copy = arr.slice();
@@ -439,6 +511,18 @@ document.querySelectorAll(".sort-controls button").forEach(btn => {
   });
 });
 
+/* Measure the vertical scrollbar gutter and expose it as --sb on the root,
+   so the tasted-row overlay can size itself to the visible content area
+   rather than full 100vw (which includes scrollbar gutter on Windows /
+   Linux / some browser+OS combos). On Mac with overlay scrollbars this
+   resolves to 0 and the calc is unchanged. */
+const updateScrollbarWidth = () => {
+  const sb = window.innerWidth - document.documentElement.clientWidth;
+  document.documentElement.style.setProperty("--sb", sb + "px");
+};
+updateScrollbarWidth();
+window.addEventListener("resize", updateScrollbarWidth);
+
 // Cache-bust so the public page always reflects the latest admin edits
 fetch("wines.json?v=" + Date.now())
   .then(r => {
@@ -466,14 +550,19 @@ if (window.matchMedia("(hover: none)").matches) {
   });
 }
 
-/* Intro animation — always plays. ~3s on first visit, ~1s on return visits
-   (tracked via sessionStorage, so once-per-session). */
+/* Intro animation — always plays. ~2.8s on first visit, ~1.1s on return
+   visits (tracked via sessionStorage, so once-per-session). */
 const isRevisit = sessionStorage.getItem("introShown");
 sessionStorage.setItem("introShown", "1");
 if (isRevisit) document.body.classList.add("intro-fast");
 
-const introStart = isRevisit ? 100 : 1500;
-const introEnd   = isRevisit ? 600 : 3000;
+const introStart    = isRevisit ? 100 : 1500;
+const slideDuration = isRevisit ? 700 : 2000;
+const fadeDuration  = isRevisit ? 400 : 800;
+/* .opacity triggers the slide. After the slide finishes, .gone triggers
+   the mask dissolution that takes the cover (and its text) away as a
+   single unit. Two phases, sequential — not overlapping. */
+const introEnd = introStart + slideDuration;
 
 setTimeout(() => {
   document.getElementById("cover1").classList.add("opacity");
@@ -511,13 +600,22 @@ function nextQuote() {
   return QUOTES[i];
 }
 function cycleBottom() {
-  bottomEl.style.opacity = "0";
-  setTimeout(() => {
+  /* Use transitionend rather than setTimeout so the text swap and fade-in
+     kick in on the exact frame the fade-out completes — no JS timer drift,
+     no perceptible gap. { once: true } makes the listener self-clean. */
+  bottomEl.addEventListener("transitionend", () => {
     bottomEl.textContent = nextQuote();
     bottomEl.style.opacity = "1";
-  }, 400);
+  }, { once: true });
+  bottomEl.style.opacity = "0";
 }
-setInterval(cycleBottom, 3500);
+/* Don't start cycling until the cover is fully dissolved — otherwise the
+   cover2 "CORKERS COLLECTORS CONNOISSEURS" text overlays the bar's new
+   quote and makes it unreadable. First cycle fires 3.5s after the cover
+   is gone, giving the user time to read the static initial text. */
+setTimeout(() => {
+  setInterval(cycleBottom, 3500);
+}, introEnd + fadeDuration);
 </script>
 
 
