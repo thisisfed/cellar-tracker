@@ -256,7 +256,7 @@
       <span>Tasted<span class="sort-controls">
         <button type="button" data-sort="date" class="active">Date</button>
         <button type="button" data-sort="score">Score</button>
-        <button type="button" data-sort="color">Color</button>
+        <button type="button" data-sort="colour">Colour</button>
       </span></span>
       <span class="count" id="count-tasted"></span>
     </div>
@@ -284,24 +284,12 @@
 </footer>
 
 <script>
-const MONTHS = ["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
-
-function ordinal(n) {
-  const v = n % 100;
-  if (v >= 11 && v <= 13) return n + "th";
-  switch (n % 10) {
-    case 1: return n + "st";
-    case 2: return n + "nd";
-    case 3: return n + "rd";
-    default: return n + "th";
-  }
-}
 function formatDate(iso) {
   const [y, m, d] = iso.split("-").map(Number);
   return `${String(d).padStart(2, "0")} / ${String(m).padStart(2, "0")} / ${y}`;
 }
 function formatDateObj(d) {
-  return `${ordinal(d.getDate())} of ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return `${String(d.getDate()).padStart(2, "0")} / ${String(d.getMonth() + 1).padStart(2, "0")} / ${d.getFullYear()}`;
 }
 function formatScore(s) {
   const whole = Math.floor(s);
@@ -329,31 +317,37 @@ function rowHTML(w, tasted) {
 
 const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
 
-// State for the Tasted section's sort mode; mutated by the sort buttons.
+// State for the Tasted section's sort. Direction is -1 (desc) or +1 (asc).
+// Natural defaults: date and score start desc (newest/highest first); colour
+// starts asc (red → white, following TYPE_ORDER). Clicking the active sort
+// flips its direction; clicking a different sort switches to that sort in its
+// default direction.
+const SORT_DEFAULTS = { date: -1, score: -1, colour: 1 };
 let allTasted = [];
 let currentSort = "date";
+let currentDir = SORT_DEFAULTS.date;
 
-function sortTasted(arr, mode) {
+function sortTasted(arr, mode, dir) {
   const copy = arr.slice();
+  const dateAsc = (a, b) => (a.tasted || "").localeCompare(b.tasted || "");
   switch (mode) {
     case "score":
-      // Highest score first; tie-break on most-recent tasting.
       return copy.sort((a, b) =>
-        ((b.score || 0) - (a.score || 0)) ||
-        (b.tasted || "").localeCompare(a.tasted || ""));
-    case "color":
-      // Same colour grouping as the cellar; within a colour, most recent first.
+        ((a.score || 0) - (b.score || 0)) * dir
+        || dateAsc(a, b) * dir);
+    case "colour":
+      // Within a colour group, always newest first regardless of primary dir.
       return copy.sort((a, b) =>
-        (TYPE_ORDER[a.type] - TYPE_ORDER[b.type]) ||
-        (b.tasted || "").localeCompare(a.tasted || ""));
+        (TYPE_ORDER[a.type] - TYPE_ORDER[b.type]) * dir
+        || -dateAsc(a, b));
     case "date":
     default:
-      return copy.sort((a, b) => (b.tasted || "").localeCompare(a.tasted || ""));
+      return copy.sort((a, b) => dateAsc(a, b) * dir);
   }
 }
 
 function renderTastedTable() {
-  const sorted = sortTasted(allTasted, currentSort);
+  const sorted = sortTasted(allTasted, currentSort, currentDir);
   document.getElementById("tbody-tasted").innerHTML =
     sorted.map(w => rowHTML(w, true)).join("")
     || `<tr><td colspan="4" class="empty">Nothing tasted yet.</td></tr>`;
@@ -377,16 +371,24 @@ function render(wines, lastModified) {
   // "Last updated" reflects when wines.json was last written (via admin.php)
   const lastDate = lastModified ? new Date(lastModified) : null;
   document.getElementById("last-updated").textContent =
-    (lastDate && !isNaN(lastDate)) ? `the ${formatDateObj(lastDate)}` : "—";
+    (lastDate && !isNaN(lastDate)) ? formatDateObj(lastDate) : "—";
 }
 
 // Wire up the sort controls. Buttons exist in the DOM by the time this runs
 // (script is at end of body), so no need to wait for DOMContentLoaded.
 document.querySelectorAll(".sort-controls button").forEach(btn => {
   btn.addEventListener("click", () => {
-    currentSort = btn.dataset.sort;
+    const clicked = btn.dataset.sort;
+    if (clicked === currentSort) {
+      // Re-clicking the active sort flips its direction.
+      currentDir = -currentDir;
+    } else {
+      // Switching to a different sort: jump to that sort's natural direction.
+      currentSort = clicked;
+      currentDir = SORT_DEFAULTS[clicked];
+    }
     document.querySelectorAll(".sort-controls button").forEach(b =>
-      b.classList.toggle("active", b === btn));
+      b.classList.toggle("active", b.dataset.sort === currentSort));
     renderTastedTable();
   });
 });
@@ -398,9 +400,9 @@ fetch("wines.json?v=" + Date.now())
     return r.json().then(data => render(data, lastModified));
   })
   .catch(err => {
-    console.error("Couldn’t load wines.json:", err);
+    console.error("Couldn’t load the wine list:", err);
     document.getElementById("tbody-cellar").innerHTML =
-      `<tr><td colspan="4" class="empty">Couldn’t load the cellar. Make sure wines.json is uploaded.</td></tr>`;
+      `<tr><td colspan="4" class="empty">Couldn’t load the wine list. Try refreshing.</td></tr>`;
   });
 
 // Tap a tasted row to reveal its note (mobile-friendly equivalent of hover).

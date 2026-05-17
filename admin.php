@@ -43,15 +43,15 @@ function load_wines(): array {
   if (!file_exists(DATA_FILE)) return [];
   $json = file_get_contents(DATA_FILE);
   if ($json === false) {
-    throw new RuntimeException('Could not read wines.json — check file permissions.');
+    throw new RuntimeException('Could not read the wine list — check file permissions.');
   }
   if (trim($json) === '') return [];
   $data = json_decode($json, true);
   if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
     throw new RuntimeException(
-      'wines.json is corrupted (' . json_last_error_msg() . '). '
+      'The wine list is corrupted (' . json_last_error_msg() . '). '
       . 'Refusing to load so the next save does not overwrite your data. '
-      . 'Restore from wines.json.bak in this folder, then refresh.'
+      . 'A backup (wines.json.bak) is in the same folder — restore it, then refresh.'
     );
   }
   return is_array($data) ? $data : [];
@@ -64,7 +64,7 @@ function save_wines(array $wines): void {
     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
   );
   if ($payload === false) {
-    throw new RuntimeException('Could not encode wines as JSON: ' . json_last_error_msg());
+    throw new RuntimeException('Could not encode the wine list as JSON: ' . json_last_error_msg());
   }
 
   // Atomic write: write to temp, back up the current file, then rename.
@@ -80,7 +80,7 @@ function save_wines(array $wines): void {
   if (!rename($tmp, DATA_FILE)) {
     // Some filesystems disallow rename across mount points — fall back to copy.
     if (!copy($tmp, DATA_FILE)) {
-      throw new RuntimeException('Could not save wines.json — check folder permissions.');
+      throw new RuntimeException('Could not save the wine list — check folder permissions.');
     }
     @unlink($tmp);
   }
@@ -313,7 +313,7 @@ function head_html(string $title): string {
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <style>
-  :root { --purple: #6633ff; --bg: #F5F5F5; --ink: #141415; --border: rgba(20,20,21,.25); }
+  :root { --purple: #FF6029; --bg: #F5F5F5; --ink: #141415; --border: rgba(20,20,21,.25); }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
@@ -402,10 +402,10 @@ function head_html(string $title): string {
     padding: 0.35rem 0.7rem; font-size: 0.8rem;
   }
   .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 50%; margin-right: 0.4em; vertical-align: middle; }
-  .dot.red    { background: #722F37; }
-  .dot.pink   { background: #E8A99B; }
-  .dot.orange { background: #B07333; }
-  .dot.white  { background: #DCC359; border: 1px solid var(--border); }
+  .dot.red    { background: #E63946; }
+  .dot.pink   { background: #FF3D7F; }
+  .dot.orange { background: #F5A623; }
+  .dot.white  { background: #FFD60A; border: 1px solid var(--border); }
 
   /* Login + setup pages */
   .auth-wrap { max-width: 380px; margin: 4rem auto; }
