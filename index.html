@@ -49,6 +49,12 @@
   body {
     margin: 0; padding: 0;
     font: clamp(15px, 2.5vw, 30px)/1em system-ui, sans-serif;
+    /* Apply -0.02em globally so wine rows, year column, footer and tasting
+       note all inherit the same subtle tightening that the chrome elements
+       (section labels, top/bottom bars, splash text) already use explicitly.
+       Tabular-nums makes the year column look a touch wider than the
+       surrounding text — this pulls it back in line. */
+    letter-spacing: -0.02em;
     width: 100%; min-height: 100%;
     background: #F5F5F5; color: #141415;
     -webkit-font-smoothing: antialiased;
@@ -68,6 +74,18 @@
        on the same line as SCHÜLLER FERRARI. Below the intro covers (z 103). */
     position: relative; z-index: 102;
   }
+  /* The section label that contains sort controls (i.e. Tasted) has three
+     children: label / sort buttons / count. A 3-column grid with mirrored
+     1fr columns either side of the auto-sized middle column puts the sort
+     buttons at the visual middle of the row, regardless of how wide the
+     label and count are. The 1fr columns themselves hold label and count;
+     text-align places them at the row edges. */
+  .section-label:has(.sort-controls) {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+  .section-label:has(.sort-controls) > :nth-child(1) { text-align: left; }
+  .section-label:has(.sort-controls) > :nth-child(3) { text-align: right; }
   .section-label .count { font-variant-numeric: tabular-nums; }
   .section-label + table { margin-bottom: 0.25em; }
 
@@ -77,7 +95,6 @@
   .sort-controls {
     display: inline-flex;
     gap: 0.6em;
-    margin-left: 1em;
   }
   .sort-controls button {
     background: none; border: none; padding: 0;
@@ -270,11 +287,13 @@
 
   <section>
     <div class="section-label">
-      <span>Tasted<span class="sort-controls">
+      <span>Tasted</span>
+      <span class="sort-controls">
+        <button type="button" data-sort="alpha">AZ</button>
         <button type="button" data-sort="date" class="active">Date</button>
         <button type="button" data-sort="score">Score</button>
         <button type="button" data-sort="colour">Colour</button>
-      </span></span>
+      </span>
       <span class="count" id="count-tasted"></span>
     </div>
     <table>
@@ -320,7 +339,7 @@ function esc(s) {
 const TYPE_LABELS = { red: "Red wine", pink: "Rosé wine", orange: "Orange wine", white: "White wine" };
 function rowHTML(w, tasted) {
   const note = tasted
-    ? `data-note="Tasted: ${formatDate(w.tasted)}, Score: ${formatScore(w.score)}"`
+    ? `data-note="Score: ${formatScore(w.score)}, Tasted: ${formatDate(w.tasted)}"`
     : "";
   const typeLabel = TYPE_LABELS[w.type] || "Wine";
   return `
@@ -339,7 +358,7 @@ const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
 // starts asc (red → white, following TYPE_ORDER). Clicking the active sort
 // flips its direction; clicking a different sort switches to that sort in its
 // default direction.
-const SORT_DEFAULTS = { date: -1, score: -1, colour: 1 };
+const SORT_DEFAULTS = { date: -1, score: -1, colour: 1, alpha: 1 };
 let allTasted = [];
 let currentSort = "date";
 let currentDir = SORT_DEFAULTS.date;
@@ -357,6 +376,12 @@ function sortTasted(arr, mode, dir) {
       return copy.sort((a, b) =>
         (TYPE_ORDER[a.type] - TYPE_ORDER[b.type]) * dir
         || -dateAsc(a, b));
+    case "alpha":
+      // Wine name alphabetical. Year DESC as tiebreak — same wine, newer
+      // vintage first; doesn't flip with primary direction.
+      return copy.sort((a, b) =>
+        a.name.localeCompare(b.name) * dir
+        || (b.year || 0) - (a.year || 0));
     case "date":
     default:
       return copy.sort((a, b) => dateAsc(a, b) * dir);
@@ -406,6 +431,13 @@ document.querySelectorAll(".sort-controls button").forEach(btn => {
     }
     document.querySelectorAll(".sort-controls button").forEach(b =>
       b.classList.toggle("active", b.dataset.sort === currentSort));
+    // Keep the alpha button's label in sync with its direction. When alpha
+    // isn't the active sort, revert to "A/Z" so the label always advertises
+    // what the next click will do.
+    const alphaBtn = document.querySelector('[data-sort="alpha"]');
+    if (alphaBtn) {
+      alphaBtn.textContent = (currentSort === "alpha" && currentDir === -1) ? "ZA" : "AZ";
+    }
     renderTastedTable();
   });
 });
