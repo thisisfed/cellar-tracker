@@ -147,12 +147,22 @@
     color: #141415; opacity: 0; pointer-events: none;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  tr.tasted:hover td:not(.col-name),
-  tr.tasted.is-revealed td:not(.col-name) { opacity: 0.1; }
-  tr.tasted:hover td.col-name > *,
-  tr.tasted.is-revealed td.col-name > * { opacity: 0.1; }
-  tr.tasted:hover td.col-name::after,
-  tr.tasted.is-revealed td.col-name::after { opacity: 1; }
+  /* Desktop: hover only — moving the cursor off the row reverts it cleanly.
+     Children of the col-name td fade together with the other tds, and the
+     ::after note fades in over the empty row. */
+  tr.tasted:hover td:not(.col-name) { opacity: 0; }
+  tr.tasted:hover td.col-name > * { opacity: 0; }
+  tr.tasted:hover td.col-name::after { opacity: 1; }
+  /* Touch-primary devices (phones, tablets) have no hover, so tap is the
+     equivalent — gated by .is-revealed which the JS tap handler toggles.
+     Scoped to (hover: none) so that on a desktop with a stale .is-revealed
+     class (e.g. accidental click from a touchscreen laptop) the reveal does
+     not stick after the cursor leaves. */
+  @media (hover: none) {
+    tr.tasted.is-revealed td:not(.col-name) { opacity: 0; }
+    tr.tasted.is-revealed td.col-name > * { opacity: 0; }
+    tr.tasted.is-revealed td.col-name::after { opacity: 1; }
+  }
 
   #cover1, #cover2 {
     position: fixed; left: 0; right: 0; height: 50vh;
@@ -413,15 +423,19 @@ fetch("wines.json?v=" + Date.now())
   });
 
 // Tap a tasted row to reveal its note (mobile-friendly equivalent of hover).
+// Only registered on touch-primary devices — on desktop we rely on :hover
+// alone, so clicks don't cause the reveal to stick after the mouse leaves.
 // Delegated on the tbody so it works for rows inserted after page load.
 // Tapping a second row closes the first, mirroring single-row hover on desktop.
-document.getElementById("tbody-tasted").addEventListener("click", (e) => {
-  const row = e.target.closest("tr.tasted");
-  if (!row) return;
-  const wasRevealed = row.classList.contains("is-revealed");
-  document.querySelectorAll("tr.tasted.is-revealed").forEach(r => r.classList.remove("is-revealed"));
-  if (!wasRevealed) row.classList.add("is-revealed");
-});
+if (window.matchMedia("(hover: none)").matches) {
+  document.getElementById("tbody-tasted").addEventListener("click", (e) => {
+    const row = e.target.closest("tr.tasted");
+    if (!row) return;
+    const wasRevealed = row.classList.contains("is-revealed");
+    document.querySelectorAll("tr.tasted.is-revealed").forEach(r => r.classList.remove("is-revealed"));
+    if (!wasRevealed) row.classList.add("is-revealed");
+  });
+}
 
 /* Intro animation — always plays. ~3s on first visit, ~1s on return visits
    (tracked via sessionStorage, so once-per-session). */
