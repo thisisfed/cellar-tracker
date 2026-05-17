@@ -112,7 +112,11 @@ function wine_from_form(array $existing = []): array {
   $w['size']     = trim($_POST['size'] ?? '75cl');
   $w['year']     = (int)($_POST['year'] ?? date('Y'));
 
-  if (!empty($_POST['tasted_date'])) {
+  // The checkbox is the source of truth. If it's unticked we always drop
+  // any existing tasted/score fields — even if the (now hidden) date input
+  // still happens to carry a value, that doesn't count as a tasting.
+  $isTasted = !empty($_POST['is_tasted']);
+  if ($isTasted && !empty($_POST['tasted_date'])) {
     // Validate the date is real (YYYY-MM-DD and parseable) before storing.
     // Without this, a typo like "2023-13-45" or "abc" would silently move
     // the wine to the Tasted section with garbage data.
@@ -313,7 +317,7 @@ function head_html(string $title): string {
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <style>
-  :root { --purple: #FF6029; --bg: #F5F5F5; --ink: #141415; --border: rgba(20,20,21,.25); }
+  :root { --purple: #2D2FFF; --bg: #F5F5F5; --ink: #141415; --border: rgba(20,20,21,.25); }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
@@ -403,9 +407,9 @@ function head_html(string $title): string {
   }
   .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 50%; margin-right: 0.4em; vertical-align: middle; }
   .dot.red    { background: #E63946; }
-  .dot.pink   { background: #FF3D7F; }
+  .dot.pink   { background: #DB2777; }
   .dot.orange { background: #F5A623; }
-  .dot.white  { background: #FFD60A; border: 1px solid var(--border); }
+  .dot.white  { background: #FACC15; border: 1px solid var(--border); }
 
   /* Login + setup pages */
   .auth-wrap { max-width: 380px; margin: 4rem auto; }
@@ -611,7 +615,18 @@ HTML;
 
   <div class="row single"><div>
     <label style="cursor:pointer">
-      <input type="checkbox" id="tastedToggle" {$tastedChecked} onchange="document.getElementById('tastedBlock').style.display = this.checked ? 'block' : 'none'; if(this.checked && !document.querySelector('[name=tasted_date]').value) document.querySelector('[name=tasted_date]').value = new Date().toISOString().slice(0,10);">
+      <input type="checkbox" id="tastedToggle" name="is_tasted" value="1" {$tastedChecked}
+             onchange="
+               document.getElementById('tastedBlock').style.display = this.checked ? 'block' : 'none';
+               const dateInput = document.querySelector('[name=tasted_date]');
+               if (this.checked) {
+                 if (!dateInput.value) dateInput.value = new Date().toISOString().slice(0,10);
+               } else {
+                 // Clear the date too, so unticking really means 'not tasted' —
+                 // without this, a stale value can ride along in the POST.
+                 dateInput.value = '';
+               }
+             ">
       Mark as tasted
     </label>
   </div></div>
