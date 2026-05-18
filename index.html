@@ -361,10 +361,9 @@
     <div class="section-label">
       <span>Tasted</span>
       <span class="sort-controls">
-        <button type="button" data-sort="alpha" class="active">AZ ▲</button>
-        <button type="button" data-sort="date" data-label="Date">Date ▼</button>
-        <button type="button" data-sort="score" data-label="Score">Score ▼</button>
-        <button type="button" data-sort="colour" data-label="Colour">Colour ▼</button>
+        <button type="button" data-sort="alpha" class="active">AZ▲</button>
+        <button type="button" data-sort="date" data-label="Date">Date▼</button>
+        <button type="button" data-sort="score" data-label="Score">Score▼</button>
       </span>
       <span class="count" id="count-tasted"></span>
     </div>
@@ -426,11 +425,10 @@ function rowHTML(w, tasted) {
 const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
 
 // State for the Tasted section's sort. Direction is -1 (desc) or +1 (asc).
-// Natural defaults: date, score and colour all start desc (newest/highest/
-// white-first); alpha starts asc (A → Z). Clicking the active sort flips its
-// direction; clicking a different sort switches to that sort in its default
-// direction.
-const SORT_DEFAULTS = { date: -1, score: -1, colour: -1, alpha: 1 };
+// Natural defaults: date and score start desc (newest/highest first); alpha
+// starts asc (A → Z). Clicking the active sort flips its direction; clicking
+// a different sort switches to that sort in its default direction.
+const SORT_DEFAULTS = { date: -1, score: -1, alpha: 1 };
 let allTasted = [];
 let currentSort = "alpha";
 let currentDir = SORT_DEFAULTS.alpha;
@@ -443,11 +441,6 @@ function sortTasted(arr, mode, dir) {
       return copy.sort((a, b) =>
         ((a.score || 0) - (b.score || 0)) * dir
         || dateAsc(a, b) * dir);
-    case "colour":
-      // Within a colour group, always newest first regardless of primary dir.
-      return copy.sort((a, b) =>
-        (TYPE_ORDER[a.type] - TYPE_ORDER[b.type]) * dir
-        || -dateAsc(a, b));
     case "alpha":
       // Wine name alphabetical. Year DESC as tiebreak — same wine, newer
       // vintage first; doesn't flip with primary direction.
@@ -504,7 +497,7 @@ function updateSortLabels() {
     const dir = isActive ? currentDir : SORT_DEFAULTS[sort];
     const arrow = dir === -1 ? "▼" : "▲";
     const base = sort === "alpha" ? "AZ" : b.dataset.label;
-    b.textContent = `${base} ${arrow}`;
+    b.textContent = `${base}${arrow}`;
   });
 }
 
