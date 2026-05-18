@@ -142,121 +142,115 @@
 
   /* Tasted rows: wine details visible by default; hover (desktop) or tap
      (mobile, via .is-revealed) cross-fades into a tasting note anchored to
-     the top of the row. The note grows the row downward by setting min-height
-     on a .col-inner wrapper inside the td.
+     the top of the row.
 
-     Why the wrapper: min-height transitions on <td> directly are inconsistent
-     across browsers (tables have their own sizing pass that doesn't always
-     play nicely with CSS transitions). A <div> inside the td is reliable,
-     and the td auto-sizes to its content, so when the div grows, the cell
-     and the whole row grow with it. */
+     The reveal lives in the producer (col-prod) cell, spanning two table
+     columns visually. Inside the reveal:
+       Column 1 — labels (Score: / Date: / Notes:) align with the vigneron
+                  text; column 1's width = col-prod's content width so
+                  column 1's right edge lands exactly on grape-text-x.
+       Column 2 — values (the score, the date, the note prose) align with
+                  the grape text; column 2 = 1fr, fills the remaining width
+                  up to grape-text-right.
+
+     Wine name brightens to full alpha on hover (the row's identifier
+     "popping"); producer / grape / year fade to a faint ghost. Reveal
+     grows the row downward via min-height on a .col-inner wrapper inside
+     td.col-prod (min-height transitions on <td> directly are unreliable;
+     a <div> inside the td works consistently). */
   tr.tasted { cursor: pointer; }
   /* Tasted rows sit in the same grey as the row separators — a quiet
      historical record, visually subordinate to the live cellar above. */
   tr.tasted td { color: rgba(20,20,21,0.25); }
 
-  /* The wrapper: position:relative establishes the containing block for the
-     absolute .reveal below. min-height grows to --reveal-height on hover/tap
-     (JS-measured after every render), so the row expands to fit. Transition
-     duration matches the opacity fade so the row resizes in lockstep with
-     the cross-fade — no perceptible lag. */
-  tr.tasted td.col-name .col-inner {
+  /* .col-inner wraps the producer span + (on tasted rows) the .reveal.
+     position:relative establishes the containing block for the absolute
+     .reveal; min-height grows to --reveal-height on hover/tap (JS-set
+     after every render) so the row expands to fit. */
+  tr.tasted td.col-prod .col-inner {
     position: relative;
     min-height: 0;
     transition: min-height 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  tr.tasted td:not(.col-name) { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
-  /* .col-inner contains the dot span, the wine-name span, and (on tasted
-     rows) the .reveal span. We fade the dot+name on hover, NOT .reveal —
-     :not(.reveal) keeps .reveal at full opacity when revealed. We don't
-     fade the td itself because opacity on a parent multiplies onto
-     children, which would dim the note. */
-  tr.tasted td.col-name .col-inner > :not(.reveal) {
+  /* Opacity transitions. We don't transition td.col-prod itself — opacity
+     on the td would dim the .reveal child. Instead we transition the
+     producer span inside .col-inner. The whole td works for col-grap and
+     col-year (no reveal child to protect). Wine name in col-name gets a
+     color transition (not opacity) — see the hover rules below. */
+  tr.tasted td.col-name,
+  tr.tasted td.col-year { transition: color 400ms cubic-bezier(0.4, 0, 0.2, 1); }
+  tr.tasted td.col-grap { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
+  tr.tasted td.col-prod .col-inner > :not(.reveal) {
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  tr.tasted td.col-name .reveal {
+  tr.tasted td.col-prod .col-inner .reveal {
     position: absolute;
-    /* Top-anchored: the note starts where the wine name was and grows
-       downward as content needs. Replaces the earlier translateY(-50%) that
-       centred it on the row's midpoint. */
+    /* Top-anchored so the note starts where the producer text was and
+       grows downward as content needs. */
     top: 0;
-    /* left: 0 anchors at .col-inner's left edge. .col-inner sits inside
-       td.col-name's padding-left (1.75em), and the wine name above starts
-       at .col-inner's left edge too (text-indent -1.5em + dot 1em + dot
-       margin 0.5em = 0 from .col-inner). So the reveal aligns with the
-       wine name without any extra padding here. */
+    /* left:0 anchors at .col-inner's left edge = col-prod's content edge
+       = producer-text-x. */
     left: 0;
-    /* Span the visible text range of (vigneron column + grape column)
-       above. Stops at the grape text right edge, so the notes value wraps
-       within the same x-range that "Producer · Grapes" occupies in the
-       row — symmetric with column 1 stopping at the producer text left
-       edge. The year column is excluded. Geometry:
-         reveal-left x      = 2em (.tc padding 0.25em + col-name padding 1.75em)
-         grape-text-right x = col-grap-right - 0.25em (grape td's padding-right)
-                            = (0.25em + 0.87*table-width) - 0.25em
-                            = 0.87*(100vw - 0.5em - --sb)
-                            = 87vw - 0.435em - 0.87*--sb
-       Reveal width = grape-text-right - reveal-left
-                    = 87vw - 2.435em - 0.87*--sb   (rounded to 2.44em). */
-    width: calc(87vw - 2.44em - 0.87 * var(--sb, 0px));
-    /* Two-column grid: labels in column 1, values in column 2. Column 2
-       starts at the same x as the producer TEXT in the row above (the
-       vigneron name itself, not the producer column's edge). Geometry:
-         reveal-left x         = .tc padding (0.25em) + col-name padding (1.75em) = 2em
-         producer-column-left  = 0.25em + col-name width
-                               where col-name = (100% - 13%) / 3 = 29% of (100vw - 0.5em - --sb)
-         producer-TEXT-x       = producer-column-left + td padding-left (0.25em)
-                               = 29vw + 0.355em - 0.29*--sb
-       So column-1 width = (producer-TEXT-x) - (reveal-left)
-                         = 29vw - 1.645em - 0.29*--sb   (rounded to 1.65em).
-       minmax(max-content, calc(...)) floors the column at the widest
-       label's natural width so labels never wrap or get clipped, but
-       otherwise yields to the calc value for alignment. With the current
-       short labels (Score / Date / Notes — all under 4em wide) the calc
-       value wins down to ~280px viewports, keeping alignment to the
-       vigneron column intact on phones. column-gap 0 means the value
-       column starts exactly at the vigneron's text-x, no extra offset
-       eating into the alignment. */
+    /* Width spans from producer text left to grape text right. Reveal
+       overflows past col-prod's right boundary into col-grap territory
+       (absolute positioning + td overflow:visible). Geometry:
+         producer-text-x  = col-prod-left + 0.25em
+         grape-text-right = col-grap-right - 0.25em
+                          = col-prod-left + 2*col-w - 0.25em
+                            where col-w = 29% of table-width
+         reveal width     = grape-text-right - producer-text-x
+                          = 2*col-w - 0.5em
+                          = 0.58*(100vw - 0.5em - --sb) - 0.5em
+                          = 58vw - 0.79em - 0.58*--sb */
+    width: calc(58vw - 0.79em - 0.58 * var(--sb, 0px));
+    /* Grid: column 1 sized to col-prod's content width so column 2 begins
+       exactly at grape-text-x; column 2 (1fr) takes the rest, ending at
+       grape-text-right. Column 1 width = col-prod content width:
+         col-prod-width   = 29% of table-width
+                          = 29vw - 0.145em - 0.29*--sb (rounded to 0.15em).
+       minmax(max-content, calc) floors the column at the widest label's
+       natural width so labels never wrap or get clipped on tiny viewports
+       where the calc value would drop below the label width. column-gap 0
+       so column 2 starts exactly at grape-text-x — no extra offset. */
     display: grid;
-    grid-template-columns: minmax(max-content, calc(29vw - 1.65em - 0.29 * var(--sb, 0px))) 1fr;
+    grid-template-columns: minmax(max-content, calc(29vw - 0.15em - 0.29 * var(--sb, 0px))) 1fr;
     column-gap: 0;
     text-align: left;
-    /* Reset the -1.5em text-indent inherited from td.col-name (which uses
-       it for the dot+wine-name layout). Without this the first line of
-       the reveal would be pulled 1.5em left of .col-inner's edge. */
     text-indent: 0;
-    /* pre-line preserves any \n inside user-typed notes — so paragraph
-       breaks the user typed in the textarea show as line breaks within
-       the Notes value. The three rows of the reveal are created by grid
-       auto-flow, not by \n. Other whitespace is collapsed, so accidental
-       double-spaces don't render with weird gaps. line-height inherits
-       from body (1em), matching the rhythm of the rest of the site. */
+    /* pre-line preserves \n in user-typed notes so paragraph breaks in
+       the textarea show as line breaks within the Notes value. The three
+       rows of the reveal are created by grid auto-flow, not by \n. */
     white-space: pre-line;
     color: #141415; opacity: 0; pointer-events: none;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* Desktop hover: wine info fades to a faint ghost (opacity 0.3) rather
-     than disappearing entirely — the text is already at color alpha 0.25
-     by default on tasted rows, so 0.3 × 0.25 ≈ 0.075 effective alpha gives
-     a watermark-like trail behind the reveal. .reveal fades up to 1; the
-     col-inner grows to fit. The 0 fallback in var(--reveal-height, 0)
-     means rows without a measured reveal don't try to shrink. */
-  tr.tasted:hover td:not(.col-name) { opacity: 0.3; }
-  tr.tasted:hover td.col-name .col-inner > :not(.reveal) { opacity: 0.3; }
-  tr.tasted:hover td.col-name .col-inner .reveal { opacity: 1; }
-  tr.tasted:hover td.col-name .col-inner { min-height: var(--reveal-height, 0); }
-  /* Touch-primary devices (phones, tablets) have no hover, so tap is the
-     equivalent — gated by .is-revealed which the JS tap handler toggles.
+
+  /* Desktop hover:
+     - col-name text color brightens from rgba(20,20,21,0.25) to full
+       #141415 — the wine name pops as the row's identifier. The dot's
+       background-color is at 100% alpha and is unaffected.
+     - Producer / grape / year fade to 0.3 element opacity (× 0.25 text
+       alpha ≈ 0.075 effective — watermark trail).
+     - Reveal fades to 1; col-prod's .col-inner grows to fit it. */
+  tr.tasted:hover td.col-name,
+  tr.tasted:hover td.col-year { color: #141415; }
+  tr.tasted:hover td.col-prod .col-inner > :not(.reveal) { opacity: 0.3; }
+  tr.tasted:hover td.col-grap { opacity: 0.3; }
+  tr.tasted:hover td.col-prod .col-inner .reveal { opacity: 1; }
+  tr.tasted:hover td.col-prod .col-inner { min-height: var(--reveal-height, 0); }
+  /* Touch devices: same effect gated on .is-revealed (toggled in JS).
      Scoped to (hover: none) so a stale .is-revealed on desktop (e.g. from
      an accidental click on a touchscreen laptop) doesn't stick once the
      cursor leaves. */
   @media (hover: none) {
-    tr.tasted.is-revealed td:not(.col-name) { opacity: 0.3; }
-    tr.tasted.is-revealed td.col-name .col-inner > :not(.reveal) { opacity: 0.3; }
-    tr.tasted.is-revealed td.col-name .col-inner .reveal { opacity: 1; }
-    tr.tasted.is-revealed td.col-name .col-inner { min-height: var(--reveal-height, 0); }
+    tr.tasted.is-revealed td.col-name,
+    tr.tasted.is-revealed td.col-year { color: #141415; }
+    tr.tasted.is-revealed td.col-prod .col-inner > :not(.reveal) { opacity: 0.3; }
+    tr.tasted.is-revealed td.col-grap { opacity: 0.3; }
+    tr.tasted.is-revealed td.col-prod .col-inner .reveal { opacity: 1; }
+    tr.tasted.is-revealed td.col-prod .col-inner { min-height: var(--reveal-height, 0); }
   }
 
   /* Federico's idea: cover starts as a white→white 100% mask (visually
@@ -419,9 +413,9 @@
     <div class="section-label">
       <span>Tasted</span>
       <span class="sort-controls">
-        <button type="button" data-sort="score" data-label="Score">Score▼</button>
+        <button type="button" data-sort="score" data-label="Score" class="active">Score▼</button>
         <button type="button" data-sort="date" data-label="Date">Date▼</button>
-        <button type="button" data-sort="alpha" class="active">AZ▲</button>
+        <button type="button" data-sort="alpha">AZ▲</button>
       </span>
       <span class="count" id="count-tasted"></span>
     </div>
@@ -451,10 +445,10 @@
 <script>
 function formatDate(iso) {
   const [y, m, d] = iso.split("-").map(Number);
-  return `${String(d).padStart(2, "0")} / ${String(m).padStart(2, "0")} / ${y}`;
+  return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
 }
 function formatDateObj(d) {
-  return `${String(d.getDate()).padStart(2, "0")} / ${String(d.getMonth() + 1).padStart(2, "0")} / ${d.getFullYear()}`;
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 function formatScore(s) {
   const whole = Math.floor(s);
@@ -488,14 +482,16 @@ function rowHTML(w, tasted) {
     ).join("");
     revealHTML = `<span class="reveal">${inner}</span>`;
   }
-  // .col-inner wraps the col-name td's children so we can transition its
-  // min-height reliably — see the CSS comment above the .col-inner rule
-  // for why transitioning min-height on the <td> itself doesn't work.
+  // .col-inner wraps the producer span + .reveal inside col-prod so we can
+  // transition its min-height reliably. The producer is wrapped in a span
+  // so :not(.reveal) can target it for the opacity fade (selectors can't
+  // target text nodes). Grape is plain text now that the reveal lives in
+  // col-prod again.
   return `
     <tr class="${tasted ? "tasted" : ""}">
-      <td class="col-name"><div class="col-inner"><span class="dot ${w.type}" role="img" aria-label="${typeLabel}"></span><span>${esc(w.name)}</span>${revealHTML}</div></td>
-      <td>${esc(w.producer)}</td>
-      <td>${esc(w.grapes)}</td>
+      <td class="col-name"><span class="dot ${w.type}" role="img" aria-label="${typeLabel}"></span><span>${esc(w.name)}</span></td>
+      <td class="col-prod"><div class="col-inner"><span>${esc(w.producer)}</span>${revealHTML}</div></td>
+      <td class="col-grap">${esc(w.grapes)}</td>
       <td class="col-year">${esc(w.year)}</td>
     </tr>`;
 }
@@ -508,8 +504,8 @@ const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
 // a different sort switches to that sort in its default direction.
 const SORT_DEFAULTS = { date: -1, score: -1, alpha: 1 };
 let allTasted = [];
-let currentSort = "alpha";
-let currentDir = SORT_DEFAULTS.alpha;
+let currentSort = "score";
+let currentDir = SORT_DEFAULTS.score;
 
 function sortTasted(arr, mode, dir) {
   const copy = arr.slice();
