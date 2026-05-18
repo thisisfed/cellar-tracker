@@ -188,10 +188,19 @@
        margin 0.5em = 0 from .col-inner). So the reveal aligns with the
        wine name without any extra padding here. */
     left: 0;
-    /* Span the full row content. .col-inner's left edge is 2em from the
-       viewport left (0.25em .tc padding + 1.75em td padding-left); the
-       table's right edge is viewport - 0.25em .tc padding - --sb. */
-    width: calc(100vw - 2.25em - var(--sb, 0px));
+    /* Span the visible text range of (vigneron column + grape column)
+       above. Stops at the grape text right edge, so the notes value wraps
+       within the same x-range that "Producer · Grapes" occupies in the
+       row — symmetric with column 1 stopping at the producer text left
+       edge. The year column is excluded. Geometry:
+         reveal-left x      = 2em (.tc padding 0.25em + col-name padding 1.75em)
+         grape-text-right x = col-grap-right - 0.25em (grape td's padding-right)
+                            = (0.25em + 0.87*table-width) - 0.25em
+                            = 0.87*(100vw - 0.5em - --sb)
+                            = 87vw - 0.435em - 0.87*--sb
+       Reveal width = grape-text-right - reveal-left
+                    = 87vw - 2.435em - 0.87*--sb   (rounded to 2.44em). */
+    width: calc(87vw - 2.44em - 0.87 * var(--sb, 0px));
     /* Two-column grid: labels in column 1, values in column 2. Column 2
        starts at the same x as the producer TEXT in the row above (the
        vigneron name itself, not the producer column's edge). Geometry:
@@ -202,12 +211,16 @@
                                = 29vw + 0.355em - 0.29*--sb
        So column-1 width = (producer-TEXT-x) - (reveal-left)
                          = 29vw - 1.645em - 0.29*--sb   (rounded to 1.65em).
-       max() floors at 8em so "Date tasted:" still fits on narrow phones
-       where the calc value drops below the label's natural width.
-       column-gap 0 means the value column starts exactly at the vigneron's
-       text-x — no extra offset eating into the alignment. */
+       minmax(max-content, calc(...)) floors the column at the widest
+       label's natural width so labels never wrap or get clipped, but
+       otherwise yields to the calc value for alignment. With the current
+       short labels (Score / Date / Notes — all under 4em wide) the calc
+       value wins down to ~280px viewports, keeping alignment to the
+       vigneron column intact on phones. column-gap 0 means the value
+       column starts exactly at the vigneron's text-x, no extra offset
+       eating into the alignment. */
     display: grid;
-    grid-template-columns: max(8em, calc(29vw - 1.65em - 0.29 * var(--sb, 0px))) 1fr;
+    grid-template-columns: minmax(max-content, calc(29vw - 1.65em - 0.29 * var(--sb, 0px))) 1fr;
     column-gap: 0;
     text-align: left;
     /* Reset the -1.5em text-indent inherited from td.col-name (which uses
@@ -224,11 +237,14 @@
     color: #141415; opacity: 0; pointer-events: none;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* Desktop hover: wine info fades out, reveal fades in, .col-inner grows
-     to fit the reveal. The default 0 in var(--reveal-height, 0) means rows
-     without a measured reveal don't try to shrink. */
-  tr.tasted:hover td:not(.col-name) { opacity: 0; }
-  tr.tasted:hover td.col-name .col-inner > :not(.reveal) { opacity: 0; }
+  /* Desktop hover: wine info fades to a faint ghost (opacity 0.3) rather
+     than disappearing entirely — the text is already at color alpha 0.25
+     by default on tasted rows, so 0.3 × 0.25 ≈ 0.075 effective alpha gives
+     a watermark-like trail behind the reveal. .reveal fades up to 1; the
+     col-inner grows to fit. The 0 fallback in var(--reveal-height, 0)
+     means rows without a measured reveal don't try to shrink. */
+  tr.tasted:hover td:not(.col-name) { opacity: 0.3; }
+  tr.tasted:hover td.col-name .col-inner > :not(.reveal) { opacity: 0.3; }
   tr.tasted:hover td.col-name .col-inner .reveal { opacity: 1; }
   tr.tasted:hover td.col-name .col-inner { min-height: var(--reveal-height, 0); }
   /* Touch-primary devices (phones, tablets) have no hover, so tap is the
@@ -237,8 +253,8 @@
      an accidental click on a touchscreen laptop) doesn't stick once the
      cursor leaves. */
   @media (hover: none) {
-    tr.tasted.is-revealed td:not(.col-name) { opacity: 0; }
-    tr.tasted.is-revealed td.col-name .col-inner > :not(.reveal) { opacity: 0; }
+    tr.tasted.is-revealed td:not(.col-name) { opacity: 0.3; }
+    tr.tasted.is-revealed td.col-name .col-inner > :not(.reveal) { opacity: 0.3; }
     tr.tasted.is-revealed td.col-name .col-inner .reveal { opacity: 1; }
     tr.tasted.is-revealed td.col-name .col-inner { min-height: var(--reveal-height, 0); }
   }
@@ -403,9 +419,9 @@
     <div class="section-label">
       <span>Tasted</span>
       <span class="sort-controls">
-        <button type="button" data-sort="alpha" class="active">AZ▲</button>
-        <button type="button" data-sort="date" data-label="Date">Date▼</button>
         <button type="button" data-sort="score" data-label="Score">Score▼</button>
+        <button type="button" data-sort="date" data-label="Date">Date▼</button>
+        <button type="button" data-sort="alpha" class="active">AZ▲</button>
       </span>
       <span class="count" id="count-tasted"></span>
     </div>
@@ -461,7 +477,7 @@ function rowHTML(w, tasted) {
   if (tasted) {
     const pairs = [
       ["Score:", formatScore(w.score)],
-      ["Date tasted:", formatDate(w.tasted)],
+      ["Date:", formatDate(w.tasted)],
     ];
     if (w.notes) pairs.push(["Notes:", w.notes]);
     // No whitespace between the label and value spans — grid items are
