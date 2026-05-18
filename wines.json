@@ -8,7 +8,8 @@
         "size": "75cl",
         "year": 2022,
         "tasted": "2023-01-15",
-        "score": 7
+        "score": 7,
+        "notes": "Crunchy red cherry, faint white pepper, gluggable. Honest primeur, no more, no less."
     },
     {
         "id": "w011",
@@ -19,7 +20,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2022-10-15",
-        "score": 7
+        "score": 7,
+        "notes": "Warm herbs, ripe plum, easy tannin. Won't change your life, but does the job."
     },
     {
         "id": "w012",
@@ -30,7 +32,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2022-12-08",
-        "score": 8
+        "score": 8,
+        "notes": "Bright morello, mineral edge, lifted on the palate. Drank it slowly because we wanted to."
     },
     {
         "id": "w013",
@@ -41,7 +44,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2023-03-12",
-        "score": 10
+        "score": 10,
+        "notes": "Wild herbs, dark cherry, the unmistakable Robinot whisper of volatility. The kind of bottle you want to start again the moment it's empty."
     },
     {
         "id": "w014",
@@ -52,7 +56,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2022-11-13",
-        "score": 10
+        "score": 10,
+        "notes": "Iron, blood orange, garrigue, then a long mineral fade. Confirmed it wasn't a fluke."
     },
     {
         "id": "w015",
@@ -63,7 +68,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2022-12-25",
-        "score": 7.5
+        "score": 7.5,
+        "notes": "Reductive at first, blew off into white peach and sea salt. Rewarded patience without quite reaching brilliance."
     },
     {
         "id": "w016",
@@ -74,7 +80,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2023-01-15",
-        "score": 8
+        "score": 8,
+        "notes": "Cloudy gold, ginger and quince, oxidative in the good way. Steen at his most approachable."
     },
     {
         "id": "w017",
@@ -85,7 +92,8 @@
         "size": "75cl",
         "year": 2018,
         "tasted": "2022-10-19",
-        "score": 7.5
+        "score": 7.5,
+        "notes": "Black olive, leather, ripe but composed. Reliable, no surprises."
     },
     {
         "id": "w018",
@@ -96,7 +104,8 @@
         "size": "75cl",
         "year": 2018,
         "tasted": "2022-11-15",
-        "score": 7
+        "score": 7,
+        "notes": "Plummy with a green streak, slightly hot. Drinkable, but muddled in the middle."
     },
     {
         "id": "w019",
@@ -107,7 +116,8 @@
         "size": "75cl",
         "year": 2018,
         "tasted": "2022-11-15",
-        "score": 5
+        "score": 5,
+        "notes": "Thin, herbal, vinegary on the finish. Off bottle or off style. Either way, not for us."
     },
     {
         "id": "w020",
@@ -118,7 +128,8 @@
         "size": "75cl",
         "year": 2018,
         "tasted": "2023-02-11",
-        "score": 6
+        "score": 6,
+        "notes": "Peppery as expected but oddly diluted, lacked the usual nerve. An off bottle from a great producer."
     },
     {
         "id": "w021",
@@ -129,7 +140,8 @@
         "size": "75cl",
         "year": 2018,
         "tasted": "2022-10-16",
-        "score": 8
+        "score": 8,
+        "notes": "Light, lifted, finished before pudding. Exactly what the name promises."
     },
     {
         "id": "w022",
@@ -140,7 +152,8 @@
         "size": "150cl",
         "year": 2018,
         "tasted": "2020-11-08",
-        "score": 7
+        "score": 7,
+        "notes": "Big bottle, brooding wine, slightly hot. The format flattered it more than the contents deserved."
     },
     {
         "id": "w023",
@@ -151,7 +164,8 @@
         "size": "75cl",
         "year": 2015,
         "tasted": "2023-03-21",
-        "score": 8
+        "score": 8,
+        "notes": "Aged complexity, dried fig, sea spray, still alive at ten years. Worth keeping the rest."
     },
     {
         "id": "w024",
@@ -162,7 +176,8 @@
         "size": "75cl",
         "year": 2021,
         "tasted": "2023-01-31",
-        "score": 7
+        "score": 7,
+        "notes": "Apricot skin, savoury edge, medium weight. Smart orange, no posturing."
     },
     {
         "id": "w025",
@@ -173,7 +188,8 @@
         "size": "75cl",
         "year": 2021,
         "tasted": "2022-12-10",
-        "score": 6.5
+        "score": 6.5,
+        "notes": "Waxy, muted, a touch hot on the finish. Hoped for more from this cuvée."
     },
     {
         "id": "w026",
@@ -184,7 +200,8 @@
         "size": "75cl",
         "year": 2021,
         "tasted": "2022-12-10",
-        "score": 6.5
+        "score": 6.5,
+        "notes": "Same evening, second bottle, same verdict. The wine, not the bottle."
     },
     {
         "id": "w027",
@@ -195,7 +212,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2022-08-13",
-        "score": 8.5
+        "score": 8.5,
+        "notes": "Walnut, dried apple, a fine oxidative edge. Flirts with Jura without going full vin jaune."
     },
     {
         "id": "w028",
@@ -206,7 +224,8 @@
         "size": "75cl",
         "year": 2018,
         "tasted": "2022-12-30",
-        "score": 7.5
+        "score": 7.5,
+        "notes": "Wax, lanolin, a sharp lemon spine. Robinot in a quieter register, still unmistakably his."
     },
     {
         "id": "w2b23133c1a",
@@ -271,7 +290,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2024-04-17",
-        "score": 9.5
+        "score": 9.5,
+        "notes": "Sustained intensity, fine grain, the volatile lift kept reframing itself. Half a point off perfection for reasons we couldn't quite name."
     },
     {
         "id": "wb77f768131",
@@ -282,7 +302,8 @@
         "size": "150cl",
         "year": 2020,
         "tasted": "2024-01-20",
-        "score": 9
+        "score": 9,
+        "notes": "Opened slowly at magnum pace, into iron and blood orange. The format flattered it; the wine deserved it."
     },
     {
         "id": "w09fc158532",
@@ -293,7 +314,8 @@
         "size": "75cl",
         "year": 2018,
         "tasted": "2023-05-17",
-        "score": 8
+        "score": 8,
+        "notes": "White pepper, raspberry, the Pineau d'Aunis kick. Found its stride twenty minutes in."
     },
     {
         "id": "w78aa6c38cb",
@@ -304,7 +326,8 @@
         "size": "75cl",
         "year": 2018,
         "tasted": "2025-04-23",
-        "score": 8.5
+        "score": 8.5,
+        "notes": "Inky, peppery, more structure than Steen usually shows, and it carried."
     },
     {
         "id": "wc5f7882d94",
@@ -315,7 +338,8 @@
         "size": "75cl",
         "year": 2021,
         "tasted": "2024-08-17",
-        "score": 7
+        "score": 7,
+        "notes": "Pale onion skin, sour cherry, light pepper. Pleasant aperitif, not memorable."
     },
     {
         "id": "w72f5fd1c4f",
@@ -326,7 +350,8 @@
         "size": "75cl",
         "year": 2020,
         "tasted": "2026-01-17",
-        "score": 6.5
+        "score": 6.5,
+        "notes": "Apricot and acacia on the nose, then a hollow middle and short finish. Promised more than it gave."
     },
     {
         "id": "wa5b70b9ed7",
@@ -337,7 +362,8 @@
         "size": "75cl",
         "year": 2016,
         "tasted": "2026-04-23",
-        "score": 9
+        "score": 9,
+        "notes": "Aged Chardonnay glow, hazelnut, lemon curd, sustained acidic spine. Steen showing off, kindly."
     },
     {
         "id": "w8de0bb6fc2",
@@ -348,7 +374,8 @@
         "size": "75cl",
         "year": 2016,
         "tasted": "2025-02-17",
-        "score": 9.5
+        "score": 9.5,
+        "notes": "First taste of this one, and it landed. Hazelnut and lemon curd, generous, with a long finish. The kind that makes you reorder."
     },
     {
         "id": "w7b958af62d",
@@ -359,6 +386,7 @@
         "size": "75cl",
         "year": 2013,
         "tasted": "2025-05-17",
-        "score": 7.5
+        "score": 7.5,
+        "notes": "Amber, beeswax, dried mango, a slight bitter twist. Twelve years on, still has things to say."
     }
 ]

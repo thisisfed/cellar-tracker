@@ -141,64 +141,106 @@
   .dot.white  { background-color: #FACC15; }
 
   /* Tasted rows: wine details visible by default; hover (desktop) or tap
-     (mobile, via .is-revealed) replaces the row content with a centred
-     tasting note. The note is anchored on the first <td>, not the <tr>,
-     because some mobile browsers (notably some iOS Safari builds) don't
-     reliably establish a positioning context on <tr> when border-collapse
-     is in effect. <td> works everywhere. */
+     (mobile, via .is-revealed) cross-fades into a tasting note anchored to
+     the top of the row. The note grows the row downward by setting min-height
+     on a .col-inner wrapper inside the td.
+
+     Why the wrapper: min-height transitions on <td> directly are inconsistent
+     across browsers (tables have their own sizing pass that doesn't always
+     play nicely with CSS transitions). A <div> inside the td is reliable,
+     and the td auto-sizes to its content, so when the div grows, the cell
+     and the whole row grow with it. */
   tr.tasted { cursor: pointer; }
   /* Tasted rows sit in the same grey as the row separators — a quiet
      historical record, visually subordinate to the live cellar above. */
   tr.tasted td { color: rgba(20,20,21,0.25); }
-  tr.tasted td.col-name { position: relative; }
+
+  /* The wrapper: position:relative establishes the containing block for the
+     absolute .reveal below. min-height grows to --reveal-height on hover/tap
+     (JS-measured after every render), so the row expands to fit. Transition
+     duration matches the opacity fade so the row resizes in lockstep with
+     the cross-fade — no perceptible lag. */
+  tr.tasted td.col-name .col-inner {
+    position: relative;
+    min-height: 0;
+    transition: min-height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   tr.tasted td:not(.col-name) { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
-  /* The col-name td contains a dot span and a wine-name span (added in
-     rowHTML). We fade those children on hover instead of fading the td
-     itself, so the ::after below stays at full opacity when revealed —
-     opacity on a parent multiplies onto pseudo-element children, which
-     would otherwise dim the note. */
-  tr.tasted td.col-name > * { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
-  tr.tasted td.col-name::after {
-    content: attr(data-note);
+  /* .col-inner contains the dot span, the wine-name span, and (on tasted
+     rows) the .reveal span. We fade the dot+name on hover, NOT .reveal —
+     :not(.reveal) keeps .reveal at full opacity when revealed. We don't
+     fade the td itself because opacity on a parent multiplies onto
+     children, which would dim the note. */
+  tr.tasted td.col-name .col-inner > :not(.reveal) {
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  tr.tasted td.col-name .reveal {
     position: absolute;
-    top: 50%;
-    /* Span the full row even though the parent td is only ~29% wide.
-       left: 0 anchors at the td's left edge (= the table's left edge,
-       since col-name is the leftmost cell). Width is viewport minus .tc's
-       0.25em horizontal padding on each side (0.5em total) minus the
-       scrollbar gutter (--sb, set from JS) — without subtracting the
-       scrollbar, 100vw includes gutter space but the content area
-       doesn't, so the overlay's centre drifts right of the visible
-       content centre. --sb defaults to 0 when JS hasn't set it (e.g. on
-       Mac with overlay scrollbars). */
+    /* Top-anchored: the note starts where the wine name was and grows
+       downward as content needs. Replaces the earlier translateY(-50%) that
+       centred it on the row's midpoint. */
+    top: 0;
+    /* left: 0 anchors at .col-inner's left edge. .col-inner sits inside
+       td.col-name's padding-left (1.75em), and the wine name above starts
+       at .col-inner's left edge too (text-indent -1.5em + dot 1em + dot
+       margin 0.5em = 0 from .col-inner). So the reveal aligns with the
+       wine name without any extra padding here. */
     left: 0;
-    width: calc(100vw - 0.5em - var(--sb, 0px));
-    transform: translateY(-50%);
-    text-align: center;
+    /* Span the full row content. .col-inner's left edge is 2em from the
+       viewport left (0.25em .tc padding + 1.75em td padding-left); the
+       table's right edge is viewport - 0.25em .tc padding - --sb. */
+    width: calc(100vw - 2.25em - var(--sb, 0px));
+    /* Two-column grid: labels in column 1, values in column 2. Column 2
+       starts at the same x as the producer TEXT in the row above (the
+       vigneron name itself, not the producer column's edge). Geometry:
+         reveal-left x         = .tc padding (0.25em) + col-name padding (1.75em) = 2em
+         producer-column-left  = 0.25em + col-name width
+                               where col-name = (100% - 13%) / 3 = 29% of (100vw - 0.5em - --sb)
+         producer-TEXT-x       = producer-column-left + td padding-left (0.25em)
+                               = 29vw + 0.355em - 0.29*--sb
+       So column-1 width = (producer-TEXT-x) - (reveal-left)
+                         = 29vw - 1.645em - 0.29*--sb   (rounded to 1.65em).
+       max() floors at 8em so "Date tasted:" still fits on narrow phones
+       where the calc value drops below the label's natural width.
+       column-gap 0 means the value column starts exactly at the vigneron's
+       text-x — no extra offset eating into the alignment. */
+    display: grid;
+    grid-template-columns: max(8em, calc(29vw - 1.65em - 0.29 * var(--sb, 0px))) 1fr;
+    column-gap: 0;
+    text-align: left;
     /* Reset the -1.5em text-indent inherited from td.col-name (which uses
-       it for the dot+wine-name layout). Without this reset the centered
-       text gets pushed 1.5em to the left of the overlay's geometric
-       centre. */
+       it for the dot+wine-name layout). Without this the first line of
+       the reveal would be pulled 1.5em left of .col-inner's edge. */
     text-indent: 0;
-    text-transform: uppercase;
+    /* pre-line preserves any \n inside user-typed notes — so paragraph
+       breaks the user typed in the textarea show as line breaks within
+       the Notes value. The three rows of the reveal are created by grid
+       auto-flow, not by \n. Other whitespace is collapsed, so accidental
+       double-spaces don't render with weird gaps. line-height inherits
+       from body (1em), matching the rhythm of the rest of the site. */
+    white-space: pre-line;
     color: #141415; opacity: 0; pointer-events: none;
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* Desktop: hover only — moving the cursor off the row reverts it cleanly.
-     Children of the col-name td fade together with the other tds, and the
-     ::after note fades in over the empty row. */
+  /* Desktop hover: wine info fades out, reveal fades in, .col-inner grows
+     to fit the reveal. The default 0 in var(--reveal-height, 0) means rows
+     without a measured reveal don't try to shrink. */
   tr.tasted:hover td:not(.col-name) { opacity: 0; }
-  tr.tasted:hover td.col-name > * { opacity: 0; }
-  tr.tasted:hover td.col-name::after { opacity: 1; }
+  tr.tasted:hover td.col-name .col-inner > :not(.reveal) { opacity: 0; }
+  tr.tasted:hover td.col-name .col-inner .reveal { opacity: 1; }
+  tr.tasted:hover td.col-name .col-inner { min-height: var(--reveal-height, 0); }
   /* Touch-primary devices (phones, tablets) have no hover, so tap is the
      equivalent — gated by .is-revealed which the JS tap handler toggles.
-     Scoped to (hover: none) so that on a desktop with a stale .is-revealed
-     class (e.g. accidental click from a touchscreen laptop) the reveal does
-     not stick after the cursor leaves. */
+     Scoped to (hover: none) so a stale .is-revealed on desktop (e.g. from
+     an accidental click on a touchscreen laptop) doesn't stick once the
+     cursor leaves. */
   @media (hover: none) {
     tr.tasted.is-revealed td:not(.col-name) { opacity: 0; }
-    tr.tasted.is-revealed td.col-name > * { opacity: 0; }
-    tr.tasted.is-revealed td.col-name::after { opacity: 1; }
+    tr.tasted.is-revealed td.col-name .col-inner > :not(.reveal) { opacity: 0; }
+    tr.tasted.is-revealed td.col-name .col-inner .reveal { opacity: 1; }
+    tr.tasted.is-revealed td.col-name .col-inner { min-height: var(--reveal-height, 0); }
   }
 
   /* Federico's idea: cover starts as a white→white 100% mask (visually
@@ -409,13 +451,33 @@ function esc(s) {
 }
 const TYPE_LABELS = { red: "Red wine", pink: "Rosé wine", orange: "Orange wine", white: "White wine" };
 function rowHTML(w, tasted) {
-  const note = tasted
-    ? `data-note="Score: ${formatScore(w.score)}, Tasted: ${formatDate(w.tasted)}"`
-    : "";
   const typeLabel = TYPE_LABELS[w.type] || "Wine";
+  // Build the reveal as label/value span pairs. CSS grid (auto 1fr) lays
+  // them out in two columns: labels in column 1 (sized to the widest,
+  // "Date tasted:"), values in column 2 aligned to the same x. Auto-flow
+  // gives each pair its own row. "Notes:" only appears if the bottle has
+  // notes; esc() applies to every cell so user-typed notes are HTML-safe.
+  let revealHTML = "";
+  if (tasted) {
+    const pairs = [
+      ["Score:", formatScore(w.score)],
+      ["Date tasted:", formatDate(w.tasted)],
+    ];
+    if (w.notes) pairs.push(["Notes:", w.notes]);
+    // No whitespace between the label and value spans — grid items are
+    // determined by element boundaries; stray text nodes from indentation
+    // would become unwanted extra grid items.
+    const inner = pairs.map(([label, val]) =>
+      `<span class="rev-label">${esc(label)}</span><span class="rev-val">${esc(val)}</span>`
+    ).join("");
+    revealHTML = `<span class="reveal">${inner}</span>`;
+  }
+  // .col-inner wraps the col-name td's children so we can transition its
+  // min-height reliably — see the CSS comment above the .col-inner rule
+  // for why transitioning min-height on the <td> itself doesn't work.
   return `
     <tr class="${tasted ? "tasted" : ""}">
-      <td class="col-name" ${note}><span class="dot ${w.type}" role="img" aria-label="${typeLabel}"></span><span>${esc(w.name)}</span></td>
+      <td class="col-name"><div class="col-inner"><span class="dot ${w.type}" role="img" aria-label="${typeLabel}"></span><span>${esc(w.name)}</span>${revealHTML}</div></td>
       <td>${esc(w.producer)}</td>
       <td>${esc(w.grapes)}</td>
       <td class="col-year">${esc(w.year)}</td>
@@ -458,6 +520,28 @@ function renderTastedTable() {
   document.getElementById("tbody-tasted").innerHTML =
     sorted.map(w => rowHTML(w, true)).join("")
     || `<tr><td colspan="4" class="empty">Nothing tasted yet.</td></tr>`;
+  // Re-measure after every render — the rows are fresh DOM nodes, the old
+  // measurements (if any) are gone with the previous innerHTML.
+  updateRevealHeights();
+}
+
+/* For each tasted row, read its .reveal span's natural rendered height and
+   expose it as --reveal-height on the <tr>. The CSS uses this to grow the
+   row's min-height on hover/tap, so the cross-fade stays in-place even
+   when the note is taller than the wine info beneath it.
+
+   .reveal is opacity:0 but absolutely positioned with a known width, so
+   its offsetHeight is computed — we can read it without making it visible.
+   Called after every render (rows change) and after every resize (the
+   reveal reflows with viewport width — a 4-line note on mobile may be 1
+   line on desktop). */
+function updateRevealHeights() {
+  document.querySelectorAll("tr.tasted").forEach(row => {
+    const reveal = row.querySelector(".reveal");
+    if (!reveal) { row.style.removeProperty("--reveal-height"); return; }
+    const h = reveal.offsetHeight;
+    if (h) row.style.setProperty("--reveal-height", h + "px");
+  });
 }
 
 function render(wines, lastModified) {
@@ -527,6 +611,9 @@ document.querySelectorAll(".sort-controls button").forEach(btn => {
 const updateScrollbarWidth = () => {
   const sb = window.innerWidth - document.documentElement.clientWidth;
   document.documentElement.style.setProperty("--sb", sb + "px");
+  // Width change reflows the reveal — a 3-line note on narrow mobile may be
+  // 1 line on wide desktop, so the row needs re-measuring on every resize.
+  updateRevealHeights();
 };
 updateScrollbarWidth();
 window.addEventListener("resize", updateScrollbarWidth);
@@ -625,6 +712,9 @@ setTimeout(() => {
   setInterval(cycleBottom, 3500);
 }, introEnd + fadeDuration);
 </script>
+
+
+<script type="text/javascript" src="/unprotected/back_to_spaceship.js?hash=4975d460e508829e8fb64d3962bc44ad35f3a95a"></script>
 
 
 <script type="text/javascript" src="/unprotected/back_to_spaceship.js?hash=4975d460e508829e8fb64d3962bc44ad35f3a95a"></script>
