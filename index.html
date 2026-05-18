@@ -147,6 +147,9 @@
      reliably establish a positioning context on <tr> when border-collapse
      is in effect. <td> works everywhere. */
   tr.tasted { cursor: pointer; }
+  /* Tasted rows sit in the same grey as the row separators — a quiet
+     historical record, visually subordinate to the live cellar above. */
+  tr.tasted td { color: rgba(20,20,21,0.25); }
   tr.tasted td.col-name { position: relative; }
   tr.tasted td:not(.col-name) { transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1); }
   /* The col-name td contains a dot span and a wine-name span (added in
@@ -358,10 +361,10 @@
     <div class="section-label">
       <span>Tasted</span>
       <span class="sort-controls">
-        <button type="button" data-sort="alpha" class="active">AZ</button>
-        <button type="button" data-sort="date">Date</button>
-        <button type="button" data-sort="score">Score</button>
-        <button type="button" data-sort="colour">Colour</button>
+        <button type="button" data-sort="alpha" class="active">AZ ▲</button>
+        <button type="button" data-sort="date" data-label="Date">Date ▼</button>
+        <button type="button" data-sort="score" data-label="Score">Score ▼</button>
+        <button type="button" data-sort="colour" data-label="Colour">Colour ▼</button>
       </span>
       <span class="count" id="count-tasted"></span>
     </div>
@@ -423,11 +426,11 @@ function rowHTML(w, tasted) {
 const TYPE_ORDER = { red: 0, pink: 1, orange: 2, white: 3 };
 
 // State for the Tasted section's sort. Direction is -1 (desc) or +1 (asc).
-// Natural defaults: date and score start desc (newest/highest first); colour
-// starts asc (red → white, following TYPE_ORDER). Clicking the active sort
-// flips its direction; clicking a different sort switches to that sort in its
-// default direction.
-const SORT_DEFAULTS = { date: -1, score: -1, colour: 1, alpha: 1 };
+// Natural defaults: date, score and colour all start desc (newest/highest/
+// white-first); alpha starts asc (A → Z). Clicking the active sort flips its
+// direction; clicking a different sort switches to that sort in its default
+// direction.
+const SORT_DEFAULTS = { date: -1, score: -1, colour: -1, alpha: 1 };
 let allTasted = [];
 let currentSort = "alpha";
 let currentDir = SORT_DEFAULTS.alpha;
@@ -487,6 +490,24 @@ function render(wines, lastModified) {
 
 // Wire up the sort controls. Buttons exist in the DOM by the time this runs
 // (script is at end of body), so no need to wait for DOMContentLoaded.
+
+// Sync every sort button's label with the current state. Every button always
+// shows a ▲/▼ arrow advertising its direction — for the active button, the
+// current direction; for inactive buttons, the direction they'd jump to on
+// click (i.e. SORT_DEFAULTS). So the arrows are always truthful about what
+// the next click will do. Alpha's letters stay locked at "AZ"; only its arrow
+// flips when direction changes.
+function updateSortLabels() {
+  document.querySelectorAll(".sort-controls button").forEach(b => {
+    const sort = b.dataset.sort;
+    const isActive = sort === currentSort;
+    const dir = isActive ? currentDir : SORT_DEFAULTS[sort];
+    const arrow = dir === -1 ? "▼" : "▲";
+    const base = sort === "alpha" ? "AZ" : b.dataset.label;
+    b.textContent = `${base} ${arrow}`;
+  });
+}
+
 document.querySelectorAll(".sort-controls button").forEach(btn => {
   btn.addEventListener("click", () => {
     const clicked = btn.dataset.sort;
@@ -500,13 +521,7 @@ document.querySelectorAll(".sort-controls button").forEach(btn => {
     }
     document.querySelectorAll(".sort-controls button").forEach(b =>
       b.classList.toggle("active", b.dataset.sort === currentSort));
-    // Keep the alpha button's label in sync with its direction. When alpha
-    // isn't the active sort, revert to "A/Z" so the label always advertises
-    // what the next click will do.
-    const alphaBtn = document.querySelector('[data-sort="alpha"]');
-    if (alphaBtn) {
-      alphaBtn.textContent = (currentSort === "alpha" && currentDir === -1) ? "ZA" : "AZ";
-    }
+    updateSortLabels();
     renderTastedTable();
   });
 });
